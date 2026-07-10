@@ -404,16 +404,7 @@ const { useState, useEffect, useRef, useCallback, useMemo } = React;
 // ============================================================
 // DEFAULT DATA
 // ============================================================
-const defaultTravelData = [
-  {id:"1",province:"北京",city:"北京市",placeName:"故宫博物院",startDate:"2023-04-05",endDate:"2023-04-05",year:2023,season:"春",companions:"全家",days:1,transport:"地铁",cost:300,food:["老北京炸酱面","烤鸭"],tags:["文化","短途"],coordinates:[39.9163,116.3972],thumbnail:"https://images.unsplash.com/photo-1508804185872-d7badad00f7d?w=400&h=280&fit=crop",images:["https://images.unsplash.com/photo-1508804185872-d7badad00f7d?w=800&h=600&fit=crop","https://images.unsplash.com/photo-1547981609-4b6bfe67ca0b?w=800&h=600&fit=crop","https://images.unsplash.com/photo-1506377247377-2c05b3b462b3?w=800&h=600&fit=crop"],note:"故宫的红墙黄瓦太美了，孩子们对九龙壁特别感兴趣，玩得很开心！",externalLink:"https://www.dpm.org.cn/"},
-  {id:"2",province:"云南",city:"大理",placeName:"洱海",startDate:"2023-07-15",endDate:"2023-07-20",year:2023,season:"夏",companions:"全家",days:6,transport:"飞机+租车",cost:8000,food:["过桥米线","乳扇","洱海鱼"],tags:["亲子游","长途"],coordinates:[25.6081,100.2644],thumbnail:"https://images.unsplash.com/photo-1559827291-72ee739d0d9a?w=400&h=280&fit=crop",images:["https://images.unsplash.com/photo-1559827291-72ee739d0d9a?w=800&h=600&fit=crop","https://images.unsplash.com/photo-1528164344705-47542687000d?w=800&h=600&fit=crop","https://images.unsplash.com/photo-1537531383496-f4749b88c23f?w=800&h=600&fit=crop"],note:"洱海边骑行是最美好的家庭时光，微风拂面，湖水湛蓝，小家伙第一次看到这么大的湖！"},
-  {id:"3",province:"四川",city:"成都",placeName:"大熊猫繁育研究基地",startDate:"2023-10-01",endDate:"2023-10-03",year:2023,season:"秋",companions:"全家",days:3,transport:"高铁",cost:3500,food:["火锅","担担面","串串香"],tags:["亲子游","短途"],coordinates:[30.7322,104.1421],thumbnail:"https://images.unsplash.com/photo-1564349683136-77e08dba1ef7?w=400&h=280&fit=crop",images:["https://images.unsplash.com/photo-1564349683136-77e08dba1ef7?w=800&h=600&fit=crop","https://images.unsplash.com/photo-1589656966895-2f33e7653819?w=800&h=600&fit=crop","https://images.unsplash.com/photo-1536640712-4d4c36ff0e4e?w=800&h=600&fit=crop"],note:"熊猫太可爱了！孩子说长大要当熊猫饲养员，成都的美食也让全家大饱口福。",externalLink:"https://www.panda.org.cn/"},
-  {id:"4",province:"上海",city:"上海市",placeName:"迪士尼乐园",startDate:"2024-01-15",endDate:"2024-01-17",year:2024,season:"冬",companions:"全家",days:3,transport:"飞机",cost:6000,food:["小笼包","生煎","本帮菜"],tags:["亲子游","主题乐园"],coordinates:[31.1443,121.6608],thumbnail:"https://images.unsplash.com/photo-1545583943-b484d9737e70?w=400&h=280&fit=crop",images:["https://images.unsplash.com/photo-1545583943-b484d9737e70?w=800&h=600&fit=crop","https://images.unsplash.com/photo-1571909552532-6a68d006b640?w=800&h=600&fit=crop","https://images.unsplash.com/photo-1551882548-5d328d4b4aa4?w=800&h=600&fit=crop"],note:"迪士尼果然是孩子的天堂！晚上的烟花秀太震撼了，全家都感动落泪。",externalLink:"https://www.shanghaidisneyresort.com/"},
-  {id:"5",province:"浙江",city:"杭州",placeName:"西湖",startDate:"2024-04-10",endDate:"2024-04-12",year:2024,season:"春",companions:"夫妻二人",days:3,transport:"高铁",cost:2500,food:["西湖醋鱼","东坡肉","龙井虾仁"],tags:["蜜月","短途"],coordinates:[30.2590,120.1309],thumbnail:"https://images.unsplash.com/photo-1580761746304-b5d8a3a69b82?w=400&h=280&fit=crop",images:["https://images.unsplash.com/photo-1580761746304-b5d8a3a69b82?w=800&h=600&fit=crop","https://images.unsplash.com/photo-1577212017308-9632f41bfc59?w=800&h=600&fit=crop","https://images.unsplash.com/photo-1599571234909-29ed5d1321de?w=800&h=600&fit=crop"],note:"难得的二人世界，断桥残雪虽然没雪，但春天的西湖别有韵味。"},
-  {id:"6",province:"海南",city:"三亚",placeName:"亚龙湾",startDate:"2024-07-20",endDate:"2024-07-25",year:2024,season:"夏",companions:"全家+爷爷奶奶",days:6,transport:"飞机",cost:12000,food:["海鲜大餐","椰子鸡","清补凉"],tags:["亲子游","长途","海岛"],coordinates:[18.2248,109.6410],thumbnail:"https://images.unsplash.com/photo-1544550583-1b56e7b30bb2?w=400&h=280&fit=crop",images:["https://images.unsplash.com/photo-1544550583-1b56e7b30bb2?w=800&h=600&fit=crop","https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&h=600&fit=crop","https://images.unsplash.com/photo-1540202404-a2f29016b523?w=800&h=600&fit=crop"],note:"带爸妈和孩子一起看海，三代同游，沙滩上的欢笑声是最珍贵的记忆。"},
-  {id:"7",province:"陕西",city:"西安",placeName:"兵马俑",startDate:"2024-10-01",endDate:"2024-10-05",year:2024,season:"秋",companions:"父子二人",days:5,transport:"高铁",cost:4000,food:["肉夹馍","羊肉泡馍","biangbiang面"],tags:["文化","父子游"],coordinates:[34.3852,109.2731],thumbnail:"https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=400&h=280&fit=crop",images:["https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&h=600&fit=crop","https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=800&h=600&fit=crop","https://images.unsplash.com/photo-1531397237303-6a5d7fe87c8b?w=800&h=600&fit=crop"],note:"父子俩的历史探索之旅，儿子对秦始皇的故事听得入迷，这趟旅行值了！"},
-  {id:"8",province:"广东",city:"广州",placeName:"长隆野生动物世界",startDate:"2025-02-01",endDate:"2025-02-03",year:2025,season:"冬",companions:"全家",days:3,transport:"高铁",cost:4500,food:["肠粉","虾饺","烧鹅"],tags:["亲子游","短途"],coordinates:[23.0083,113.2770],thumbnail:"https://images.unsplash.com/photo-1564760290292-23341e4df6ec?w=400&h=280&fit=crop",images:["https://images.unsplash.com/photo-1564760290292-23341e4df6ec?w=800&h=600&fit=crop","https://images.unsplash.com/photo-1574158622682-e40e69881006?w=800&h=600&fit=crop","https://images.unsplash.com/photo-1535268647677-300dbf3d78d1?w=800&h=600&fit=crop"],note:"小朋友近距离看到长颈鹿和考拉超兴奋，广州的早茶文化也让人回味无穷。",externalLink:"https://www.chimelong.com/"}
-];
+const defaultTravelData = [];
 
 // ============================================================
 // HELPERS
@@ -868,7 +859,7 @@ function Footer({onExport,onImport,storageBytes,baidu,onToast}){
             <span className="storage-bar-track"><span className={`storage-bar-fill${level?" "+level:""}`} style={{width:storageInfo.pct+"%"}}></span></span>
             <span className="storage-pct">{storageInfo.pct}%</span>
           </span>
-          <BaiduPanel token={baidu.token} user={baidu.user} login={baidu.login} logout={baidu.logout} uploadFile={baidu.uploadFile} syncing={baidu.syncing} onToast={onToast} authError={baidu.authError}/>
+          <BaiduPanel token={baidu.token} user={baidu.user} login={baidu.login} logout={handleBaiduLogout} syncing={baidu.syncing} onToast={onToast} authError={baidu.authError} onSyncNow={syncNow}/>
           <button onClick={onExport}>⬇ JSON 备份导出</button>
           <label style={{cursor:"pointer",fontSize:"0.73rem",color:"var(--text-muted)",transition:"var(--transition)"}} onMouseEnter={e=>e.target.style.color="var(--gold-light)"} onMouseLeave={e=>e.target.style.color="var(--text-muted)"}>⬆ 导入数据恢复<input type="file" accept=".json" ref={fileRef} onChange={handleImport} style={{display:"none"}}/></label>
         </div>
@@ -1040,21 +1031,45 @@ function useBaiduCloud(){
     const d=await r.json();setSyncing(false);return d;
   }catch(e){setSyncing(false);throw e}};
 
-  return{token,user,login,logout,apiCall,uploadFile,syncing,authError};
+  // Cloud data sync: save travelData as JSON to Baidu Netdisk
+  const saveData=async(travelData,heroData,customTags)=>{if(!token)return;setSyncing(true);try{
+    const payload=JSON.stringify({travelData,heroData,customTags,updatedAt:new Date().toISOString()});
+    const blob=new Blob([payload],{type:'application/json'});
+    const path='/apps/family-travel/family-travel-data.json';
+    const fd=new FormData();fd.append('file',blob,'data.json');fd.append('path',path);fd.append('ondup','overwrite');
+    const r=await fetch(`${PROXY_URL}/pan.baidu.com/rest/2.0/xpan/file?method=upload&access_token=${token.access_token}&path=${encodeURIComponent(path)}&ondup=overwrite`,{method:'POST',body:fd});
+    const d=await r.json();setSyncing(false);
+    if(d.errno===0)console.log('Cloud sync OK:',new Date().toLocaleTimeString());else console.error('Cloud sync failed:',d);
+    return d;
+  }catch(e){setSyncing(false);console.error('Cloud sync error:',e)}};
+
+  // Load data from cloud
+  const loadData=async()=>{if(!token)return null;try{
+    const path='/apps/family-travel/family-travel-data.json';
+    const r=await fetch(`${PROXY_URL}/pan.baidu.com/rest/2.0/xpan/multimedia?method=filemetas&access_token=${token.access_token}&path=${encodeURIComponent(path)}&dlink=1`);
+    const meta=await r.json();
+    if(meta.errno!==0||!meta.list||meta.list.length===0){console.log('No cloud data found, starting fresh');return null}
+    const dlink=meta.list[0].dlink;if(!dlink)return null;
+    const dr=await fetch(dlink);const data=await dr.json();
+    console.log('Cloud data loaded:',data.updatedAt||'unknown date');
+    return data;
+  }catch(e){console.error('Cloud load error:',e);return null}};
+
+  return{token,user,login,logout,apiCall,uploadFile,saveData,loadData,syncing,authError};
 }
 
-function BaiduPanel({token,user,login,logout,uploadFile,syncing,onToast,authError}){
+function BaiduPanel({token,user,login,logout,syncing,onToast,authError,onSyncNow}){
   const[showMenu,setShowMenu]=useState(false);
   const connected=!!token;
   return(
     <div className="baidu-panel" style={{position:'relative'}}>
       <button className={`baidu-btn${connected?' connected':''}`} onClick={()=>connected?setShowMenu(s=>!s):login()} title={connected?'百度网盘已连接':authError?`错误: ${authError}`:'连接百度网盘'}>
         <span className={`baidu-status${connected?' on':''}`} style={authError?{background:'#d4756b'}:{}}></span>
-        {connected?`☁️ ${user?.baidu_name||'已连接'}`:authError?`☁️ 连接失败 (点击重试)`:'☁️ 连接网盘'}
+        {syncing?`☁️ 同步中…`:connected?`☁️ ${user?.baidu_name||'已连接'}`:authError?`☁️ 连接失败 (点击重试)`:'☁️ 连接网盘'}
       </button>
       {connected&&(
         <div className={`cloud-actions${showMenu?' show':''}`}>
-          <button onClick={()=>{onToast('网盘备份功能已就绪，上传照片时会自动备份到 /apps/family-travel/ 目录');setShowMenu(false)}}>📤 备份全部数据到网盘</button>
+          <button onClick={()=>{onSyncNow();setShowMenu(false)}}>🔄 立即同步数据</button>
           <button onClick={()=>{logout();setShowMenu(false)}}>断开连接</button>
         </div>
       )}
@@ -1077,7 +1092,19 @@ function App(){
   const[heroData,setHeroData]=useLocalStorage("familyHeroData_v2",{title:"我们的旅行足迹",subtitle:"每一段旅程，都是家的延伸"});
   const[customTags,setCustomTags]=useLocalStorage("familyCustomTags_v2",[]);
   const baidu=useBaiduCloud();
+  const[cloudLoaded,setCloudLoaded]=useState(false);
   const[activeId,setActiveId]=useState(null);
+
+  // On mount: if connected to Baidu, load cloud data (takes precedence over localStorage)
+  useEffect(()=>{if(!baidu.token||cloudLoaded)return;
+    (async()=>{const cloud=await baidu.loadData();if(cloud&&cloud.travelData&&Array.isArray(cloud.travelData)){setTravelData(cloud.travelData);if(cloud.heroData)setHeroData(cloud.heroData);if(cloud.customTags)setCustomTags(cloud.customTags);setToastMsg(`已从百度网盘加载 ${cloud.travelData.length} 条记录 ✓`)};setCloudLoaded(true)})()
+  },[baidu.token]);
+
+  // Auto-save to cloud on data changes (debounced 3 seconds)
+  useEffect(()=>{if(!baidu.token||!cloudLoaded)return;const t=setTimeout(()=>{baidu.saveData(travelData,heroData,customTags)},3000);return()=>clearTimeout(t)},[travelData,heroData,customTags,baidu.token,cloudLoaded]);
+
+  const syncNow=()=>{if(!baidu.token)return;baidu.saveData(travelData,heroData,customTags).then(()=>setToastMsg('数据已同步到百度网盘 ✓'))};
+  const handleBaiduLogout=()=>{baidu.logout();setCloudLoaded(false)};
   const[selectedYear,setSelectedYear]=useState(null);
   const[showAddEdit,setShowAddEdit]=useState(false);
   const[editingDest,setEditingDest]=useState(null);
