@@ -1095,30 +1095,39 @@ async function generateChallenge(verifier){const e=new TextEncoder();const d=awa
 async function fetchWithTimeout(url,opts={},timeoutMs=15000){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),timeoutMs);try{const r=await fetch(url,{...opts,signal:controller.signal});return r}finally{clearTimeout(timer)}}
 // 百度API代理：主代理不通时自动切换备用代理
 // workers.dev 在国内可能被墙，corsproxy.io 作为备用
-const BAIDU_PROXIES=[
-  {url:'https://travel-baidu-proxy.zhehao668-travel.workers.dev', fmt:'path'},       // 主：Cloudflare Worker（国外可用）
-  {url:'https://corsproxy.io', fmt:'query'},                                           // 备1：公共CORS代理
-  {url:'https://api.allorigins.win/raw', fmt:'query'},                                  // 备2：AllOrigins
+// path 格式代理：完整支持 GET/POST，格式为 https://proxy/baidu-api-host/path
+// query 格式代理：仅支持 GET（不转发 POST body），格式为 https://proxy/?url=...
+// POST 请求只用 path 格式代理，GET 请求优先 path 再试 query
+const BAIDU_PROXIES_PATH=[
+  {url:'https://travel-baidu-proxy.zhehao668-travel.workers.dev'},  // 主：Cloudflare Worker
+  {url:'https://proxy.cors.sh'},                                     // 备：cors.sh（支持POST）
+];
+const BAIDU_PROXIES_QUERY=[
+  {url:'https://corsproxy.io'},                                      // 仅GET可用
 ];
 async function baiduProxyFetch(apiHost,apiPath,opts={},timeoutMs=8000){
-  let lastErr=null;
-  for(const proxy of BAIDU_PROXIES){
+  const isPOST=(opts.method||'GET').toUpperCase()==='POST';
+  // POST 请求必须用 path 格式代理（query 格式不转发 body）
+  // GET 请求优先 path 格式，再试 query 格式
+  const proxies=isPOST?BAIDU_PROXIES_PATH:[...BAIDU_PROXIES_PATH,...BAIDU_PROXIES_QUERY];
+  let lastErr=null, triedCount=0;
+  for(const proxy of proxies){
     try{
+      const base=proxy.url.replace(/\/$/,'');
+      // 如果是 query 格式代理（仅 GET 会走到这里）
+      const isQuery=BAIDU_PROXIES_QUERY.includes(proxy);
       let targetUrl;
-      if(proxy.fmt==='path'){
-        // 格式: https://proxy/pan.baidu.com/rest/2.0/...
-        const base=proxy.url.replace(/\/$/,'');
-        const fullPath='/'+apiHost+apiPath;
-        targetUrl=base+fullPath;
-      }else{
-        // 格式: https://proxy/?url=https://pan.baidu.com/rest/2.0/...
+      if(isQuery){
         const baiduUrl=encodeURIComponent(`https://${apiHost}${apiPath}`);
         targetUrl=`${proxy.url}?url=${baiduUrl}`;
+      }else{
+        targetUrl=base+'/'+apiHost+apiPath;
       }
+      console.log(`🔄 尝试代理 ${++triedCount}: ${targetUrl.substring(0,80)}...`);
       const r=await fetchWithTimeout(targetUrl,opts,timeoutMs);
-      if(r.ok||r.status<500)return r;
+      if(r.ok||r.status<500){console.log(`✅ 代理 ${triedCount} 成功`);return r}
       lastErr=new Error(`HTTP ${r.status}`);
-    }catch(e){lastErr=e}
+    }catch(e){console.warn(`❌ 代理 ${triedCount} 失败:`,e.message);lastErr=e}
   }
   throw lastErr||new Error('所有代理均不可用');
 }
