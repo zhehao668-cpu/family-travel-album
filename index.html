@@ -237,6 +237,15 @@ body{font-family:var(--font-sans);background:var(--cream);color:var(--text-prima
 .footer-links a,.footer-links button,.footer-links label{font-size:0.73rem;color:var(--text-muted);text-decoration:none;background:none;border:none;cursor:pointer;font-family:var(--font-sans);letter-spacing:0.03em;transition:var(--transition);padding:0}
 .footer-links a:hover,.footer-links button:hover,.footer-links label:hover{color:var(--gold-light)}
 
+/* Storage indicator */
+.storage-indicator{display:inline-flex;align-items:center;gap:8px;font-size:0.65rem;color:var(--text-muted);letter-spacing:0.03em;white-space:nowrap}
+.storage-bar-track{width:60px;height:3px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;flex-shrink:0}
+.storage-bar-fill{height:100%;border-radius:2px;transition:width 0.5s ease,background 0.5s ease;background:rgba(212,168,83,0.5)}
+.storage-bar-fill.warning{background:rgba(196,149,58,0.7)}
+.storage-bar-fill.danger{background:rgba(212,117,107,0.7)}
+.storage-indicator .storage-pct{font-variant-numeric:tabular-nums;min-width:28px;text-align:right}
+@media(max-width:640px){.storage-indicator{font-size:0.6rem}.storage-bar-track{width:40px}}
+
 /* ===== IMAGE VIEWER ===== */
 .image-viewer-overlay{position:fixed;inset:0;background:rgba(20,16,10,0.96);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;animation:fadeIn 0.3s ease}
 .viewer-close{position:absolute;top:20px;right:24px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:1.4rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--transition);z-index:10}
@@ -829,14 +838,23 @@ function SummaryBar({data,onPhotoClick,onNoteExpand,onNoteEdit,onNoteDelete,onMa
 // ============================================================
 // FOOTER
 // ============================================================
-function Footer({onExport,onImport}){
+function Footer({onExport,onImport,storageBytes}){
   const fileRef=useRef(null);
   const handleImport=()=>{const f=fileRef.current?.files?.[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(Array.isArray(d))onImport(d);else alert("无效数据格式")}catch{alert("JSON 解析失败")}};r.readAsText(f)};
+
+  const storageInfo=useMemo(()=>{const MB=storageBytes/(1024*1024);return{mb:MB,limitMB:5,pct:Math.min(100,Math.round(MB/5*100))}},[storageBytes]);
+  const level=storageInfo.pct>90?"danger":storageInfo.pct>70?"warning":"";
+
   return(
     <footer className="footer">
       <div className="footer-inner">
         <p className="footer-text">© 2025 家庭旅行相册 · 用心记录每一段旅程</p>
-        <div className="footer-links">
+        <div className="footer-links" style={{alignItems:"center"}}>
+          <span className="storage-indicator" title={`约 ${storageInfo.mb.toFixed(2)} MB / ${storageInfo.limitMB} MB — 定期导出备份以防数据丢失`}>
+            存储
+            <span className="storage-bar-track"><span className={`storage-bar-fill${level?" "+level:""}`} style={{width:storageInfo.pct+"%"}}></span></span>
+            <span className="storage-pct">{storageInfo.pct}%</span>
+          </span>
           <button onClick={onExport}>⬇ JSON 备份导出</button>
           <label style={{cursor:"pointer",fontSize:"0.73rem",color:"var(--text-muted)",transition:"var(--transition)"}} onMouseEnter={e=>e.target.style.color="var(--gold-light)"} onMouseLeave={e=>e.target.style.color="var(--text-muted)"}>⬆ 导入数据恢复<input type="file" accept=".json" ref={fileRef} onChange={handleImport} style={{display:"none"}}/></label>
         </div>
@@ -976,6 +994,7 @@ function App(){
   const[showPickNote,setShowPickNote]=useState(false);
 
   const allTags=useMemo(()=>{const s=new Set(customTags);travelData.forEach(d=>d.tags.forEach(t=>s.add(t)));return[...s].sort()},[travelData,customTags]);
+  const storageBytes=useMemo(()=>{try{let t=0;for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith("family"))t+=localStorage.getItem(k).length*2}return t}catch{return 0}},[travelData,heroData,customTags]);
 
   const filteredMapIds=useMemo(()=>{if(!selectedYear)return null;const ids=new Set(travelData.filter(d=>d.year===selectedYear).map(d=>d.id));return ids.size>0?ids:null},[travelData,selectedYear]);
 
@@ -1015,7 +1034,7 @@ function App(){
 
       <SummaryBar data={travelData} onPhotoClick={handlePhotoClick} onNoteExpand={dest=>setNoteDest(dest)} onNoteEdit={handleEdit} onNoteDelete={handleNoteDelete} onManageGallery={()=>setShowGalleryMgr(true)} onAddNote={()=>setShowPickNote(true)}/>
 
-      <Footer onExport={handleExport} onImport={handleImport}/>
+      <Footer onExport={handleExport} onImport={handleImport} storageBytes={storageBytes}/>
 
       {showHeroEdit&&<HeroEditModal heroData={heroData} onSave={d=>{setHeroData(d);setShowHeroEdit(false);setToastMsg("标题已更新 ✓")}} onClose={()=>setShowHeroEdit(false)}/>}
       {detailDest&&<DetailModal dest={detailDest} onClose={()=>setDetailDest(null)} onEdit={handleEdit} onDelete={handleDelete}/>}
