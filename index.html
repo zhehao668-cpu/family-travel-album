@@ -264,6 +264,53 @@ body{font-family:var(--font-sans);background:var(--cream);color:var(--text-prima
 @media(max-width:1280px){.side-panel{width:320px}.waterfall-gallery{columns:3}.notes-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:1024px){.main-content{flex-direction:column}.timeline-col{width:100%;padding-top:0}.timeline-track{position:static;flex-direction:row;flex-wrap:wrap;justify-content:center;gap:4px;padding-bottom:16px}.timeline-line{display:none}.timeline-year{width:auto;padding:6px 14px;font-size:0.75rem}.timeline-trip{max-width:none}.map-col{padding:0}.map-wrapper{position:static;height:400px;margin-bottom:20px}.side-panel{width:100%}.side-panel-header{position:static}.cards-list{max-height:none;flex-direction:row;flex-wrap:wrap}.dest-card{width:calc(50% - 6px)}.waterfall-gallery{columns:2}.notes-grid{grid-template-columns:1fr 1fr}.stats-row{gap:20px}.stat-number{font-size:2.2rem}}
 @media(max-width:640px){.hero h1{font-size:1.8rem}.hero{padding:40px 16px 30px}.main-content{padding:0 16px 40px}.navbar-inner{padding:0 16px}.nav-links{gap:14px}.nav-links a,.nav-links button{font-size:0.7rem}.map-wrapper{height:320px;border-radius:var(--radius-md)}.dest-card{width:100%}.stats-row{grid-template-columns:1fr;gap:8px}.waterfall-gallery{columns:2;column-gap:8px}.waterfall-item{margin-bottom:8px}.notes-grid{grid-template-columns:1fr}.footer-inner{flex-direction:column;text-align:center}.summary-bar{padding:40px 16px}.detail-modal{max-width:95vw}.detail-modal .detail-carousel{height:220px}.detail-modal .detail-body{padding:16px}.detail-modal .detail-title{font-size:1.2rem}}
+
+/* ===== SECTION TOOLBAR ===== */
+.section-toolbar{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
+.section-edit-btn{display:inline-flex;align-items:center;gap:4px;padding:6px 14px;border-radius:16px;border:1px solid rgba(212,168,83,0.25);background:transparent;color:var(--text-secondary);font-family:var(--font-sans);font-size:0.68rem;cursor:pointer;transition:var(--transition);letter-spacing:0.03em;white-space:nowrap}
+.section-edit-btn:hover{border-color:var(--gold);color:var(--gold-dark);background:rgba(212,168,83,0.05)}
+.section-edit-btn.add-btn{border-style:dashed;color:var(--gold-dark)}
+.section-edit-btn.add-btn:hover{background:rgba(212,168,83,0.08)}
+
+/* Map toolbar */
+.map-toolbar{position:absolute;top:12px;right:12px;z-index:500;display:flex;gap:6px}
+.map-toolbar-btn{display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:14px;background:rgba(255,255,255,0.9);border:1px solid rgba(212,168,83,0.2);color:var(--text-secondary);font-family:var(--font-sans);font-size:0.68rem;cursor:pointer;transition:var(--transition);box-shadow:var(--shadow-sm);letter-spacing:0.02em;backdrop-filter:blur(4px)}
+.map-toolbar-btn:hover{color:var(--gold-dark);border-color:var(--gold);box-shadow:var(--shadow-md)}
+
+/* Gallery & Note Manager Modals */
+.gm-modal{background:var(--white);border-radius:var(--radius-lg);width:100%;max-width:680px;max-height:85vh;overflow-y:auto;box-shadow:var(--shadow-xl);animation:slideUp 0.3s ease;padding:24px 28px}
+.gm-modal h3{font-family:var(--font-serif);font-size:1.1rem;margin-bottom:20px;color:var(--text-primary);letter-spacing:0.02em}
+.gm-dest-group{margin-bottom:18px;border:1px solid var(--cream-darker);border-radius:var(--radius-md);overflow:hidden}
+.gm-dest-header{padding:10px 14px;background:var(--cream);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.gm-dest-name{font-family:var(--font-serif);font-size:0.82rem;font-weight:600;color:var(--text-primary);letter-spacing:0.02em}
+.gm-dest-meta{font-size:0.65rem;color:var(--text-muted)}
+.gm-photos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;padding:10px 12px}
+.gm-photo-item{position:relative;border-radius:var(--radius-sm);overflow:hidden;aspect-ratio:4/3;background:var(--cream-dark);cursor:pointer;transition:var(--transition)}
+.gm-photo-item img{width:100%;height:100%;object-fit:cover}
+.gm-photo-item.is-thumb{box-shadow:0 0 0 2px var(--gold),0 0 0 4px rgba(212,168,83,0.2)}
+.gm-photo-item .gm-photo-del{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,0.45);color:#fff;border:none;cursor:pointer;font-size:0.6rem;display:flex;align-items:center;justify-content:center;transition:var(--transition);opacity:0;line-height:1}
+.gm-photo-item:hover .gm-photo-del{opacity:1}
+.gm-photo-item .gm-photo-del:hover{background:rgba(212,90,80,0.9)}
+.gm-add-row{display:flex;gap:8px;padding:6px 12px 12px}
+.gm-add-row input{flex:1;padding:7px 10px;border:1.5px solid var(--cream-darker);border-radius:var(--radius-sm);font-size:0.72rem;font-family:var(--font-sans);background:var(--cream);transition:var(--transition)}
+.gm-add-row input:focus{outline:none;border-color:var(--gold)}
+.gm-add-row button,.gm-set-thumb-btn{padding:6px 12px;border-radius:14px;border:none;background:var(--gold);color:#fff;font-size:0.7rem;cursor:pointer;font-family:var(--font-sans);transition:var(--transition);white-space:nowrap;letter-spacing:0.02em}
+.gm-add-row button:hover,.gm-set-thumb-btn:hover{background:var(--gold-dark)}
+.gm-set-thumb-btn{background:transparent;border:1px solid rgba(212,168,83,0.3);color:var(--text-secondary);padding:4px 10px;font-size:0.65rem}
+.gm-set-thumb-btn:hover{background:rgba(212,168,83,0.08);color:var(--gold-dark)}
+.gm-empty{text-align:center;padding:30px;color:var(--text-muted);font-size:0.78rem}
+
+/* Note card delete */
+.note-card .note-delete-btn{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.68rem;padding:2px 6px;border-radius:10px;transition:var(--transition);font-family:var(--font-sans)}
+.note-card .note-delete-btn:hover{color:#d4756b;background:rgba(212,117,107,0.06)}
+
+/* Pick destination dropdown */
+.pick-dest-modal{background:var(--white);border-radius:var(--radius-lg);width:100%;max-width:420px;max-height:70vh;overflow-y:auto;box-shadow:var(--shadow-xl);animation:slideUp 0.3s ease;padding:24px}
+.pick-dest-modal h3{font-family:var(--font-serif);font-size:1.05rem;margin-bottom:16px;color:var(--text-primary)}
+.pick-dest-item{padding:10px 14px;border-radius:var(--radius-sm);cursor:pointer;transition:var(--transition);border:1px solid transparent;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center}
+.pick-dest-item:hover{background:rgba(212,168,83,0.05);border-color:rgba(212,168,83,0.15)}
+.pick-dest-item .pick-name{font-family:var(--font-serif);font-size:0.82rem;color:var(--text-primary)}
+.pick-dest-item .pick-meta{font-size:0.65rem;color:var(--text-muted)}
 </style>
 </head>
 <body>
@@ -391,7 +438,7 @@ function Timeline({data,selectedYear,onYearClick,onTripClick}){
 // ============================================================
 // MAP
 // ============================================================
-function MapView({data,activeId,filteredIds,onMarkerClick}){
+function MapView({data,activeId,filteredIds,onMarkerClick,onAdd,onManage}){
   const mapRef=useRef(null);const mapInst=useRef(null);const markers=useRef({});
   useEffect(()=>{if(!mapRef.current)return;const m=L.map(mapRef.current,{center:[33.5,107],zoom:5,zoomControl:true,scrollWheelZoom:true,attributionControl:false});L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",{maxZoom:18,minZoom:3}).addTo(m);L.control.attribution({position:"bottomleft",prefix:""}).addTo(m);mapInst.current=m;const ro=new ResizeObserver(()=>{m.invalidateSize()});ro.observe(mapRef.current);return()=>{ro.disconnect();m.remove();mapInst.current=null}},[]);
 
@@ -399,7 +446,17 @@ function MapView({data,activeId,filteredIds,onMarkerClick}){
 
   useEffect(()=>{const m=mapInst.current;if(!m||!activeId)return;const d=data.find(x=>x.id===activeId);if(!d)return;m.flyTo(d.coordinates,12,{duration:1.2});const mk=markers.current[activeId];if(mk&&!mk.getPopup().isOpen())setTimeout(()=>mk.openPopup(),800)},[activeId,data]);
 
-  return <div className="map-col" id="map-section"><div className="map-wrapper"><div id="map" ref={mapRef}></div></div></div>;
+  return(
+    <div className="map-col" id="map-section">
+      <div className="map-wrapper">
+        <div id="map" ref={mapRef}></div>
+        <div className="map-toolbar">
+          <button className="map-toolbar-btn" onClick={onAdd} title="新增目的地">+ 新增</button>
+          <button className="map-toolbar-btn" onClick={onManage} title="管理目的地">✎ 管理</button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ============================================================
@@ -539,8 +596,9 @@ function AddEditModal({dest,onSave,onClose}){
 // ============================================================
 // NOTE CARD (truncated)
 // ============================================================
-function NoteCard({dest,onExpand,onEdit}){
+function NoteCard({dest,onExpand,onEdit,onDelete}){
   const truncated=dest.note&&dest.note.length>60?dest.note.slice(0,60)+"…":dest.note;
+  const handleDelete=e=>{e.stopPropagation();if(window.confirm("确定删除「"+dest.placeName+"」的手记吗？"))onDelete(dest.id)};
   return(
     <div className="note-card">
       <div className="note-date">{formatDate(dest.startDate)} · {dest.province}{dest.city}</div>
@@ -549,6 +607,7 @@ function NoteCard({dest,onExpand,onEdit}){
       <div className="note-actions-row">
         <button className="more-link" onClick={()=>onExpand(dest)}>展开阅读</button>
         <button className="section-edit" onClick={e=>{e.stopPropagation();onEdit(dest)}} style={{marginLeft:0}}></button>
+        <button className="note-delete-btn" onClick={handleDelete} title="删除手记">✕</button>
       </div>
     </div>
   );
@@ -575,7 +634,7 @@ function NoteDetailModal({dest,onSave,onClose}){
 // ============================================================
 // SUMMARY BAR
 // ============================================================
-function SummaryBar({data,onPhotoClick,onNoteExpand,onNoteEdit}){
+function SummaryBar({data,onPhotoClick,onNoteExpand,onNoteEdit,onNoteDelete,onManageGallery,onAddNote}){
   const stats=useMemo(()=>{const provinces=new Set(data.map(d=>d.province));const cities=new Set(data.map(d=>d.city));const companions=new Set(data.map(d=>d.companions));const allFood=data.flatMap(d=>d.food||[]);return{totalDest:data.length,totalDays:data.reduce((s,d)=>s+(d.days||0),0),totalCost:formatCost(data.reduce((s,d)=>s+(d.cost||0),0)),provinces:provinces.size,cities:cities.size,companions:companions.size,topFood:[...new Set(allFood)].slice(0,5).join(" · ")}},[data]);
 
   const allImages=useMemo(()=>data.flatMap(d=>[d.thumbnail,...(d.images||[])].filter(Boolean).map((url,i)=>({url,location:`${d.province}·${d.city}`,placeName:d.placeName,date:formatDate(d.startDate),destId:d.id,imgIdx:i}))),[data]);
@@ -595,6 +654,9 @@ function SummaryBar({data,onPhotoClick,onNoteExpand,onNoteEdit}){
           <span className="section-title">旅途光影</span>
         </div>
         <div className="section-sub">每一帧，都是时光的标本</div>
+        <div className="section-toolbar" style={{marginBottom:16}}>
+          <button className="section-edit-btn" onClick={onManageGallery}>✎ 管理照片</button>
+        </div>
         <div className="waterfall-gallery">
           {displayImages.map((img,i)=><div key={i} className="waterfall-item" onClick={()=>{const dd=data.find(d=>d.id===img.destId);if(dd){const imgs=[dd.thumbnail,...(dd.images||[])];onPhotoClick(imgs.filter(Boolean),img.imgIdx)}}}><img src={img.url} alt={img.placeName} loading="lazy" style={{width:"100%",display:"block"}} onError={e=>{e.target.style.display="none";e.target.parentElement.style.display="none"}}/><div className="waterfall-overlay"><span className="wf-location">{img.placeName}</span><span className="wf-date">{img.location} · {img.date}</span></div></div>)}
         </div>
@@ -602,9 +664,12 @@ function SummaryBar({data,onPhotoClick,onNoteExpand,onNoteEdit}){
 
         <div id="notes-section" style={{marginTop:showAll?0:60}}>
           <div className="section-header"><span className="section-title">旅行手记</span></div>
-          <div className="section-sub" style={{marginBottom:28}}>旅途中的只言片语</div>
+          <div className="section-sub" style={{marginBottom:12}}>旅途中的只言片语</div>
+          <div className="section-toolbar" style={{marginBottom:20}}>
+            <button className="section-edit-btn add-btn" onClick={onAddNote}>+ 写手记</button>
+          </div>
           <div className="notes-grid">
-            {data.filter(d=>d.note).map(d=><NoteCard key={d.id} dest={d} onExpand={onNoteExpand} onEdit={onNoteEdit}/>)}
+            {data.filter(d=>d.note).map(d=><NoteCard key={d.id} dest={d} onExpand={onNoteExpand} onEdit={onNoteEdit} onDelete={onNoteDelete}/>)}
           </div>
         </div>
       </div>
@@ -654,6 +719,80 @@ function ImageViewer({images,startIndex,onClose}){
 }
 
 // ============================================================
+// GALLERY MANAGER MODAL
+// ============================================================
+function GalleryManager({data,onDeletePhoto,onAddPhotos,onSetThumbnail,onClose}){
+  const[addUrls,setAddUrls]=useState({});
+  const setUrl=(destId,v)=>setAddUrls(p=>({...p,[destId]:v}));
+  const handleAdd=(destId)=>{const urls=addUrls[destId];if(!urls||!urls.trim())return;const list=urls.split("\n").map(s=>s.trim()).filter(Boolean);if(list.length===0)return;onAddPhotos(destId,list);setUrl(destId,"")};
+  useEffect(()=>{const k=e=>{if(e.key==="Escape")onClose()};window.addEventListener("keydown",k);return()=>window.removeEventListener("keydown",k)},[onClose]);
+
+  return(
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="gm-modal" onClick={e=>e.stopPropagation()}>
+        <h3>🖼 管理照片</h3>
+        {data.length===0&&<div className="gm-empty">还没有旅行记录，先去地图板块添加目的地吧</div>}
+        {data.map(dest=>{const allPhotos=[dest.thumbnail,...(dest.images||[])].filter(Boolean);
+          return(
+            <div key={dest.id} className="gm-dest-group">
+              <div className="gm-dest-header">
+                <div>
+                  <span className="gm-dest-name">{dest.placeName}</span>
+                  <span className="gm-dest-meta" style={{marginLeft:10}}>{dest.province} · {dest.city} · {formatDate(dest.startDate)}</span>
+                </div>
+              </div>
+              <div className="gm-photos-grid">
+                {allPhotos.map((url,i)=>{
+                  const isThumb=i===0&&url===dest.thumbnail;
+                  return(
+                    <div key={i} className={`gm-photo-item${isThumb?" is-thumb":""}`} title={isThumb?"封面照片":"点击设为封面"}>
+                      <img src={url} alt="" onError={e=>{e.target.style.display="none"}}/>
+                      <button className="gm-photo-del" onClick={()=>onDeletePhoto(dest.id,i)} title="删除照片">✕</button>
+                      {!isThumb&&<button className="gm-set-thumb-btn" style={{position:"absolute",bottom:3,left:3,fontSize:"0.55rem",padding:"2px 6px"}} onClick={()=>onSetThumbnail(dest.id,url)}>封面</button>}
+                    </div>
+                  );
+                })}
+                {allPhotos.length===0&&<div style={{padding:10,fontSize:"0.68rem",color:"var(--text-muted)"}}>暂无照片</div>}
+              </div>
+              <div className="gm-add-row">
+                <input value={addUrls[dest.id]||""} onChange={e=>setUrl(dest.id,e.target.value)} placeholder={`为「${dest.placeName}」添加照片URL（每行一个）…`}/>
+                <button onClick={()=>handleAdd(dest.id)}>添加</button>
+              </div>
+            </div>
+          );
+        })}
+        <div className="form-actions" style={{marginTop:8}}><button className="detail-btn ghost" onClick={onClose}>关闭</button></div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// PICK DESTINATION MODAL (for adding note)
+// ============================================================
+function PickDestModal({data,onPick,onClose}){
+  const noNote=data.filter(d=>!d.note);
+  return(
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="pick-dest-modal" onClick={e=>e.stopPropagation()}>
+        <h3>选择目的地写手记</h3>
+        {noNote.length===0&&<div className="gm-empty">所有目的地都已有手记了 ✨</div>}
+        {noNote.map(d=>(
+          <div key={d.id} className="pick-dest-item" onClick={()=>{onPick(d);onClose()}}>
+            <div>
+              <div className="pick-name">{d.placeName}</div>
+              <div className="pick-meta">{d.province} · {d.city} · {formatDate(d.startDate)}</div>
+            </div>
+            <span style={{fontSize:"0.75rem",color:"var(--gold)"}}>→</span>
+          </div>
+        ))}
+        <div className="form-actions" style={{marginTop:12}}><button className="detail-btn ghost" onClick={onClose}>取消</button></div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
 // APP
 // ============================================================
 function App(){
@@ -668,6 +807,8 @@ function App(){
   const[showHeroEdit,setShowHeroEdit]=useState(false);
   const[viewer,setViewer]=useState(null);
   const[toastMsg,setToastMsg]=useState(null);
+  const[showGalleryMgr,setShowGalleryMgr]=useState(false);
+  const[showPickNote,setShowPickNote]=useState(false);
 
   const filteredMapIds=useMemo(()=>{if(!selectedYear)return null;const ids=new Set(travelData.filter(d=>d.year===selectedYear).map(d=>d.id));return ids.size>0?ids:null},[travelData,selectedYear]);
 
@@ -685,6 +826,11 @@ function App(){
   const handleExport=()=>{const b=new Blob([JSON.stringify(travelData,null,2)],{type:"application/json"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=`family-travel-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(u);setToastMsg("数据已导出 ✓")};
   const handleImport=data=>{if(window.confirm(`即将导入 ${data.length} 条记录，当前数据将被覆盖。确认？`)){setTravelData(data);setActiveId(null);setSelectedYear(null);setToastMsg(`成功导入 ${data.length} 条 ✓`)}};
   const handlePhotoClick=(imgs,idx)=>setViewer({images:imgs,startIndex:idx||0});
+  const handleNoteDelete=destId=>{setTravelData(p=>p.map(d=>d.id===destId?{...d,note:""}:d));setToastMsg("手记已删除 ✓")};
+  const handleDeletePhoto=(destId,imgIdx)=>{setTravelData(p=>p.map(d=>{if(d.id!==destId)return d;const all=[d.thumbnail,...(d.images||[])];all.splice(imgIdx,1);const newThumb=all[0]||"";const newImages=all.slice(1);return{...d,thumbnail:newThumb,images:newImages}}));setToastMsg("照片已删除 ✓")};
+  const handleAddPhotos=(destId,urls)=>{setTravelData(p=>p.map(d=>{if(d.id!==destId)return d;const imgs=[...d.images||[],...urls];if(!d.thumbnail)return{...d,thumbnail:urls[0],images:imgs.slice(1)};return{...d,images:imgs}}));setToastMsg(`已添加 ${urls.length} 张照片 ✓`)};
+  const handleSetThumbnail=(destId,url)=>{setTravelData(p=>p.map(d=>{if(d.id!==destId)return d;const all=[d.thumbnail,...(d.images||[])].filter(u=>u!==url);return{...d,thumbnail:url,images:all}}));setToastMsg("封面已更新 ✓")};
+  const handlePickNoteDest=dest=>{setNoteDest(dest)};
 
   return(
     <div>
@@ -693,11 +839,11 @@ function App(){
 
       <div className="main-content">
         <Timeline data={travelData} selectedYear={selectedYear} onYearClick={handleYearClick} onTripClick={handleTripClick}/>
-        <MapView data={travelData} activeId={activeId} filteredIds={filteredMapIds} onMarkerClick={handleMarkerClick}/>
+        <MapView data={travelData} activeId={activeId} filteredIds={filteredMapIds} onMarkerClick={handleMarkerClick} onAdd={handleAdd} onManage={()=>{document.querySelector(".side-panel")?.scrollIntoView({behavior:"smooth",block:"start"})}}/>
         <SidePanel data={travelData} activeId={activeId} onSelect={handleSelectCard} onDetail={handleDetail} onAdd={handleAdd} onExport={handleExport}/>
       </div>
 
-      <SummaryBar data={travelData} onPhotoClick={handlePhotoClick} onNoteExpand={dest=>setNoteDest(dest)} onNoteEdit={handleEdit}/>
+      <SummaryBar data={travelData} onPhotoClick={handlePhotoClick} onNoteExpand={dest=>setNoteDest(dest)} onNoteEdit={handleEdit} onNoteDelete={handleNoteDelete} onManageGallery={()=>setShowGalleryMgr(true)} onAddNote={()=>setShowPickNote(true)}/>
 
       <Footer onExport={handleExport} onImport={handleImport}/>
 
@@ -706,6 +852,8 @@ function App(){
       {noteDest&&<NoteDetailModal dest={noteDest} onSave={handleNoteSave} onClose={()=>setNoteDest(null)}/>}
       {showAddEdit&&<AddEditModal dest={editingDest} onSave={handleSave} onClose={()=>{setShowAddEdit(false);setEditingDest(null)}}/>}
       {viewer&&<ImageViewer images={viewer.images} startIndex={viewer.startIndex} onClose={()=>setViewer(null)}/>}
+      {showGalleryMgr&&<GalleryManager data={travelData} onDeletePhoto={handleDeletePhoto} onAddPhotos={handleAddPhotos} onSetThumbnail={handleSetThumbnail} onClose={()=>setShowGalleryMgr(false)}/>}
+      {showPickNote&&<PickDestModal data={travelData} onPick={handlePickNoteDest} onClose={()=>setShowPickNote(false)}/>}
       {toastMsg&&<Toast message={toastMsg} onDone={()=>setToastMsg(null)}/>}
     </div>
   );
