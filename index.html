@@ -1,0 +1,2122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>家庭旅游相册 — 我们的旅行足迹</title>
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================
+   CSS CUSTOM PROPERTIES & RESET
+   ============================================================ */
+:root {
+  --cream: #FFF8F0;
+  --cream-dark: #F5EDE0;
+  --cream-darker: #EBE0D0;
+  --gold: #D4A853;
+  --gold-light: #E8CC7A;
+  --gold-dark: #B8860B;
+  --gold-pale: #F5E6C8;
+  --amber: #C4953A;
+  --text-primary: #2C2416;
+  --text-secondary: #5C5242;
+  --text-muted: #8A7E6E;
+  --text-on-dark: #E8DCC8;
+  --dark-bg: #1E1810;
+  --dark-bg-alt: #282118;
+  --white: #FFFFFF;
+  --shadow-sm: 0 1px 3px rgba(44,36,22,0.06);
+  --shadow-md: 0 4px 16px rgba(44,36,22,0.08);
+  --shadow-lg: 0 12px 40px rgba(44,36,22,0.12);
+  --shadow-xl: 0 24px 60px rgba(44,36,22,0.16);
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --transition: 0.3s cubic-bezier(0.4,0,0.2,1);
+  --transition-slow: 0.5s cubic-bezier(0.4,0,0.2,1);
+  --font-serif: 'Noto Serif SC', 'Playfair Display', 'Cormorant Garamond', serif;
+  --font-sans: 'Noto Sans SC', -apple-system, sans-serif;
+  --max-width: 1440px;
+  --navbar-height: 64px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--cream);
+  color: var(--text-primary);
+  line-height: 1.7;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--cream-dark); }
+::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gold-dark); }
+
+/* ============================================================
+   NAVBAR — Frosted Glass
+   ============================================================ */
+.navbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--navbar-height);
+  background: rgba(255,248,240,0.78);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border-bottom: 1px solid rgba(212,168,83,0.15);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+.navbar.scrolled {
+  box-shadow: var(--shadow-md);
+  background: rgba(255,248,240,0.92);
+}
+.navbar-inner {
+  width: 100%;
+  max-width: var(--max-width);
+  padding: 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.nav-logo {
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--gold-dark);
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+.nav-logo .logo-icon {
+  width: 34px; height: 34px;
+  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.9rem;
+}
+.nav-links {
+  display: flex;
+  gap: 32px;
+  list-style: none;
+  align-items: center;
+}
+.nav-links a {
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  transition: var(--transition);
+  position: relative;
+  padding: 4px 0;
+}
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  bottom: -2px; left: 0; right: 0;
+  height: 1.5px;
+  background: var(--gold);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+.nav-links a:hover { color: var(--gold-dark); }
+.nav-links a:hover::after { transform: scaleX(1); }
+.nav-btn {
+  padding: 8px 20px;
+  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: var(--transition);
+  letter-spacing: 0.03em;
+}
+.nav-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(184,134,11,0.3);
+}
+
+/* ============================================================
+   HERO HEADER
+   ============================================================ */
+.hero {
+  margin-top: var(--navbar-height);
+  padding: 60px 40px 40px;
+  text-align: center;
+  max-width: var(--max-width);
+  margin-left: auto;
+  margin-right: auto;
+}
+.hero-eyebrow {
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 12px;
+}
+.hero h1 {
+  font-family: var(--font-serif);
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.03em;
+  margin-bottom: 12px;
+  line-height: 1.25;
+}
+.hero-subtitle {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  font-style: italic;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+.hero-line {
+  width: 60px;
+  height: 2px;
+  background: var(--gold);
+  margin: 20px auto 0;
+  border-radius: 1px;
+}
+
+/* ============================================================
+   MAIN CONTENT — Three Column Layout
+   ============================================================ */
+.main-content {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 40px 60px;
+  display: flex;
+  gap: 0;
+  position: relative;
+  min-height: 700px;
+}
+
+/* ---- Timeline (Left) ---- */
+.timeline-col {
+  width: 90px;
+  flex-shrink: 0;
+  position: relative;
+  padding-top: 20px;
+}
+.timeline-track {
+  position: sticky;
+  top: calc(var(--navbar-height) + 40px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.timeline-line {
+  position: absolute;
+  top: 0; bottom: 0;
+  left: 50%;
+  width: 1.5px;
+  background: linear-gradient(to bottom, var(--gold), var(--gold-pale), var(--gold));
+  transform: translateX(-50%);
+  border-radius: 1px;
+}
+.timeline-year {
+  position: relative;
+  z-index: 2;
+  font-family: var(--font-serif);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--gold-dark);
+  cursor: pointer;
+  padding: 10px 8px;
+  transition: var(--transition);
+  text-align: center;
+  width: 100%;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.03em;
+}
+.timeline-year:hover {
+  color: var(--gold-dark);
+  background: rgba(212,168,83,0.08);
+}
+.timeline-year.active {
+  color: #fff;
+  background: var(--gold);
+  border-radius: 20px;
+}
+.timeline-dot {
+  width: 10px; height: 10px;
+  background: var(--gold);
+  border-radius: 50%;
+  border: 2px solid var(--cream);
+  box-shadow: 0 0 0 3px var(--gold-pale);
+  flex-shrink: 0;
+  transition: var(--transition);
+}
+.timeline-year.active .timeline-dot {
+  background: var(--gold-dark);
+  box-shadow: 0 0 0 6px rgba(212,168,83,0.2);
+}
+.timeline-trips {
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+}
+.timeline-year.expanded .timeline-trips { display: flex; }
+.timeline-trip {
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: 10px;
+  transition: var(--transition);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 80px;
+  text-align: center;
+}
+.timeline-trip:hover {
+  color: var(--gold-dark);
+  background: rgba(212,168,83,0.06);
+}
+
+/* ---- Map Area (Center) ---- */
+.map-col {
+  flex: 1;
+  min-width: 0;
+  padding: 0 20px;
+}
+.map-wrapper {
+  position: sticky;
+  top: calc(var(--navbar-height) + 40px);
+  height: 580px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  border: 2px solid rgba(212,168,83,0.12);
+  background: var(--cream-dark);
+  transition: var(--transition);
+}
+.map-wrapper:hover {
+  box-shadow: var(--shadow-xl);
+  border-color: rgba(212,168,83,0.22);
+}
+#map {
+  width: 100%;
+  height: 100%;
+}
+
+/* Custom Leaflet Overrides */
+.leaflet-container {
+  background: var(--cream-dark) !important;
+  font-family: var(--font-sans) !important;
+}
+.leaflet-popup-content-wrapper {
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-lg) !important;
+  border: 1px solid rgba(212,168,83,0.15) !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+.leaflet-popup-content {
+  margin: 0 !important;
+  font-family: var(--font-sans) !important;
+  min-width: 220px;
+}
+.leaflet-popup-close-button {
+  color: var(--text-secondary) !important;
+  padding: 8px !important;
+  z-index: 10;
+}
+
+/* Pulse Marker */
+.pulse-marker {
+  width: 18px; height: 18px;
+  background: var(--gold);
+  border-radius: 50%;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 8px rgba(184,134,11,0.4);
+  position: relative;
+  transition: transform 0.2s ease;
+}
+.pulse-marker::before {
+  content: '';
+  position: absolute;
+  top: -8px; left: -8px;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 2px solid rgba(212,168,83,0.5);
+  animation: pulse-ring 2s ease-out infinite;
+}
+.pulse-marker.active {
+  background: var(--gold-dark);
+  transform: scale(1.3);
+  border-color: #fff;
+  box-shadow: 0 4px 16px rgba(184,134,11,0.6);
+}
+.pulse-marker.active::before {
+  border-color: rgba(184,134,11,0.6);
+  animation-duration: 1.2s;
+}
+@keyframes pulse-ring {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* Map Popup Card */
+.map-popup-card {
+  padding: 0;
+}
+.map-popup-card img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  display: block;
+}
+.map-popup-card .popup-body {
+  padding: 12px 14px;
+}
+.map-popup-card h4 {
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+.map-popup-card .popup-loc {
+  font-size: 0.7rem;
+  color: var(--gold-dark);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+.map-popup-card .popup-date {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* ---- Side Panel (Right) ---- */
+.side-panel {
+  width: 380px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.side-panel-header {
+  position: sticky;
+  top: calc(var(--navbar-height) + 40px);
+  background: rgba(255,248,240,0.9);
+  backdrop-filter: blur(12px);
+  z-index: 5;
+  padding-bottom: 4px;
+}
+.side-panel-title {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+  letter-spacing: 0.02em;
+}
+.tag-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+.tag-pill {
+  padding: 4px 14px;
+  border-radius: 14px;
+  font-size: 0.7rem;
+  font-weight: 400;
+  border: 1px solid rgba(212,168,83,0.25);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.tag-pill:hover {
+  border-color: var(--gold);
+  color: var(--gold-dark);
+}
+.tag-pill.active {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: #fff;
+}
+.side-panel-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.btn-add {
+  flex: 1;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  border: 1.5px dashed rgba(212,168,83,0.4);
+  background: transparent;
+  color: var(--gold-dark);
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: var(--transition);
+  letter-spacing: 0.03em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.btn-add:hover {
+  background: rgba(212,168,83,0.06);
+  border-color: var(--gold);
+}
+.btn-export {
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(212,168,83,0.2);
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 0.73rem;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+.btn-export:hover { color: var(--gold-dark); border-color: var(--gold); }
+
+.cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: calc(100vh - 340px);
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* Destination Card */
+.dest-card {
+  background: var(--white);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(212,168,83,0.08);
+  transition: var(--transition);
+  cursor: pointer;
+  position: relative;
+}
+.dest-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  border-color: rgba(212,168,83,0.2);
+}
+.dest-card.active {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(212,168,83,0.12), var(--shadow-md);
+}
+.dest-card .card-thumb-area {
+  position: relative;
+  height: 140px;
+  overflow: hidden;
+}
+.dest-card .card-thumb-area img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+.dest-card:hover .card-thumb-area img {
+  transform: scale(1.05);
+}
+.dest-card .card-thumb-nav {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  display: flex;
+  gap: 3px;
+}
+.dest-card .thumb-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.5);
+  transition: var(--transition);
+}
+.dest-card .thumb-dot.active {
+  background: #fff;
+  width: 16px;
+  border-radius: 3px;
+}
+.dest-card .card-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.85);
+  border: none;
+  cursor: pointer;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  z-index: 2;
+}
+.dest-card:hover .card-arrow { display: flex; }
+.dest-card .card-arrow:hover { background: #fff; color: var(--gold-dark); }
+.dest-card .card-arrow.left { left: 6px; }
+.dest-card .card-arrow.right { right: 6px; }
+
+.dest-card .card-body {
+  padding: 14px 16px;
+}
+.dest-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 6px;
+}
+.dest-card .card-title {
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+}
+.dest-card .card-location {
+  font-size: 0.7rem;
+  color: var(--gold);
+  font-weight: 500;
+}
+.dest-card .card-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.dest-card .card-meta span { display: flex; align-items: center; gap: 4px; }
+.dest-card .card-note {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-top: 6px;
+}
+.dest-card .card-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+.dest-card .card-action-btn {
+  padding: 4px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(212,168,83,0.15);
+  background: transparent;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: var(--font-sans);
+}
+.dest-card .card-action-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold-dark);
+}
+.dest-card .card-action-btn.danger:hover {
+  border-color: #d4756b;
+  color: #d4756b;
+}
+
+/* ============================================================
+   SUMMARY BAR (Dark Section)
+   ============================================================ */
+.summary-bar {
+  background: var(--dark-bg);
+  color: var(--text-on-dark);
+  padding: 70px 40px 60px;
+}
+.summary-bar-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+
+/* Stats Row */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px;
+  margin-bottom: 60px;
+  text-align: center;
+}
+.stat-item {
+  padding: 30px 20px;
+}
+.stat-number {
+  font-family: var(--font-serif);
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--gold-light);
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+.stat-number .unit {
+  font-size: 1.2rem;
+  font-weight: 400;
+  color: var(--gold);
+}
+.stat-label {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.stat-detail {
+  font-size: 0.72rem;
+  color: rgba(232,220,200,0.5);
+  line-height: 1.6;
+}
+
+/* Waterfall Gallery */
+.gallery-section-title {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  color: var(--gold-light);
+  text-align: center;
+  margin-bottom: 8px;
+  letter-spacing: 0.03em;
+}
+.gallery-section-sub {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 36px;
+}
+.waterfall-gallery {
+  columns: 4;
+  column-gap: 16px;
+  margin-bottom: 60px;
+}
+.waterfall-item {
+  break-inside: avoid;
+  margin-bottom: 16px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.waterfall-item img {
+  width: 100%;
+  display: block;
+  transition: transform 0.6s ease;
+}
+.waterfall-item:hover img {
+  transform: scale(1.06);
+}
+.waterfall-item .waterfall-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(30,24,16,0.85) 0%, transparent 60%);
+  opacity: 0;
+  transition: var(--transition);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 16px;
+}
+.waterfall-item:hover .waterfall-overlay {
+  opacity: 1;
+}
+.waterfall-overlay .wf-location {
+  font-family: var(--font-serif);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+}
+.waterfall-overlay .wf-date {
+  font-size: 0.7rem;
+  color: var(--gold-light);
+}
+
+/* Travel Notes */
+.notes-section-title {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  color: var(--gold-light);
+  text-align: center;
+  margin-bottom: 8px;
+  letter-spacing: 0.03em;
+}
+.notes-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+.note-card {
+  background: var(--dark-bg-alt);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  border: 1px solid rgba(212,168,83,0.08);
+  transition: var(--transition);
+  cursor: pointer;
+}
+.note-card:hover {
+  border-color: rgba(212,168,83,0.2);
+  transform: translateY(-2px);
+}
+.note-card .note-date {
+  font-size: 0.7rem;
+  color: var(--gold);
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.note-card .note-title {
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  color: var(--text-on-dark);
+  margin-bottom: 8px;
+}
+.note-card .note-excerpt {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.footer {
+  background: var(--dark-bg);
+  border-top: 1px solid rgba(212,168,83,0.1);
+  padding: 30px 40px;
+  text-align: center;
+}
+.footer-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.footer-text {
+  font-size: 0.73rem;
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+}
+.footer-links {
+  display: flex;
+  gap: 24px;
+}
+.footer-links a, .footer-links button {
+  font-size: 0.73rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  letter-spacing: 0.03em;
+  transition: var(--transition);
+  padding: 0;
+}
+.footer-links a:hover, .footer-links button:hover { color: var(--gold-light); }
+
+/* ============================================================
+   IMAGE VIEWER (Full Screen)
+   ============================================================ */
+.image-viewer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20,16,10,0.96);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.viewer-close {
+  position: absolute;
+  top: 20px; right: 24px;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #fff;
+  font-size: 1.4rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  z-index: 10;
+}
+.viewer-close:hover { background: rgba(255,255,255,0.15); }
+.viewer-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 60px 20px;
+  position: relative;
+  width: 100%;
+}
+.viewer-main img {
+  max-width: 100%;
+  max-height: 75vh;
+  object-fit: contain;
+  border-radius: 4px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  animation: zoomIn 0.35s ease;
+}
+@keyframes zoomIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+.viewer-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #fff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  z-index: 10;
+}
+.viewer-nav:hover { background: rgba(255,255,255,0.14); }
+.viewer-nav.prev { left: 24px; }
+.viewer-nav.next { right: 24px; }
+.viewer-thumbnails {
+  display: flex;
+  gap: 8px;
+  padding: 16px 40px 24px;
+  overflow-x: auto;
+  max-width: 100%;
+  justify-content: center;
+}
+.viewer-thumb {
+  width: 56px; height: 40px;
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+  opacity: 0.4;
+  transition: var(--transition);
+  flex-shrink: 0;
+  border: 2px solid transparent;
+}
+.viewer-thumb:hover { opacity: 0.7; }
+.viewer-thumb.active { opacity: 1; border-color: var(--gold); }
+.viewer-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.viewer-info {
+  position: absolute;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255,255,255,0.6);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+}
+
+/* ============================================================
+   MODAL (Add/Edit Form)
+   ============================================================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20,16,10,0.5);
+  z-index: 5000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.25s ease;
+}
+.modal-dialog {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  width: 90%;
+  max-width: 520px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-xl);
+}
+.modal-dialog h3 {
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+}
+.form-group {
+  margin-bottom: 16px;
+}
+.form-group label {
+  display: block;
+  font-size: 0.73rem;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+}
+.form-group input,
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--cream-darker);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  background: var(--cream);
+  transition: var(--transition);
+  resize: vertical;
+}
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(212,168,83,0.08);
+}
+.form-group textarea { min-height: 80px; }
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.form-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+.btn-cancel {
+  padding: 10px 24px;
+  border-radius: 20px;
+  border: 1px solid var(--cream-darker);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  transition: var(--transition);
+}
+.btn-cancel:hover { border-color: var(--text-muted); }
+.btn-save {
+  padding: 10px 28px;
+  border-radius: 20px;
+  border: none;
+  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+  color: #fff;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: var(--transition);
+  letter-spacing: 0.03em;
+}
+.btn-save:hover {
+  box-shadow: 0 4px 16px rgba(184,134,11,0.3);
+  transform: translateY(-1px);
+}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+.toast {
+  position: fixed;
+  bottom: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--dark-bg);
+  color: var(--text-on-dark);
+  padding: 12px 28px;
+  border-radius: 24px;
+  font-size: 0.78rem;
+  z-index: 8000;
+  box-shadow: var(--shadow-lg);
+  animation: toastIn 0.3s ease, toastOut 0.3s ease 2.5s forwards;
+  letter-spacing: 0.03em;
+}
+@keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+@keyframes toastOut { from { opacity: 1; } to { opacity: 0; } }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 1280px) {
+  .side-panel { width: 320px; }
+  .waterfall-gallery { columns: 3; }
+  .notes-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 1024px) {
+  .main-content { flex-direction: column; }
+  .timeline-col { width: 100%; padding-top: 0; }
+  .timeline-track {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+    padding-bottom: 16px;
+  }
+  .timeline-line { display: none; }
+  .timeline-year { width: auto; padding: 6px 14px; font-size: 0.75rem; }
+  .timeline-trip { max-width: none; }
+  .map-col { padding: 0; }
+  .map-wrapper { position: static; height: 400px; margin-bottom: 20px; }
+  .side-panel { width: 100%; }
+  .side-panel-header { position: static; }
+  .cards-list { max-height: none; flex-direction: row; flex-wrap: wrap; }
+  .dest-card { width: calc(50% - 7px); }
+  .waterfall-gallery { columns: 2; }
+  .notes-grid { grid-template-columns: 1fr 1fr; }
+  .stats-row { gap: 20px; }
+  .stat-number { font-size: 2.2rem; }
+}
+@media (max-width: 640px) {
+  .hero h1 { font-size: 1.8rem; }
+  .hero { padding: 40px 20px 30px; }
+  .main-content { padding: 0 16px 40px; }
+  .navbar-inner { padding: 0 16px; }
+  .nav-links { gap: 16px; }
+  .nav-links a { font-size: 0.72rem; }
+  .map-wrapper { height: 320px; border-radius: var(--radius-md); }
+  .dest-card { width: 100%; }
+  .stats-row { grid-template-columns: 1fr; gap: 8px; }
+  .waterfall-gallery { columns: 2; column-gap: 8px; }
+  .waterfall-item { margin-bottom: 8px; }
+  .notes-grid { grid-template-columns: 1fr; }
+  .footer-inner { flex-direction: column; text-align: center; }
+  .summary-bar { padding: 40px 16px; }
+  .modal-dialog { padding: 20px; width: 95%; }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- Dependencies -->
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
+
+// ============================================================
+// DEFAULT TRAVEL DATA
+// ============================================================
+const defaultTravelData = [
+  {
+    id: "1",
+    province: "北京", city: "北京市", placeName: "故宫博物院",
+    startDate: "2023-04-05", endDate: "2023-04-05",
+    year: 2023, season: "春", companions: "全家", days: 1,
+    transport: "地铁", cost: 300,
+    food: ["老北京炸酱面", "烤鸭"],
+    tags: ["文化", "短途"],
+    coordinates: [39.9163, 116.3972],
+    thumbnail: "https://images.unsplash.com/photo-1508804185872-d7badad00f7d?w=400&h=280&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1508804185872-d7badad00f7d?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1547981609-4b6bfe67ca0b?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1506377247377-2c05b3b462b3?w=800&h=600&fit=crop"
+    ],
+    note: "故宫的红墙黄瓦太美了，孩子们对九龙壁特别感兴趣，玩得很开心！",
+    guideMap: null, externalLink: "https://www.dpm.org.cn/"
+  },
+  {
+    id: "2",
+    province: "云南", city: "大理", placeName: "洱海",
+    startDate: "2023-07-15", endDate: "2023-07-20",
+    year: 2023, season: "夏", companions: "全家", days: 6,
+    transport: "飞机+租车", cost: 8000,
+    food: ["过桥米线", "乳扇", "洱海鱼"],
+    tags: ["亲子游", "长途"],
+    coordinates: [25.6081, 100.2644],
+    thumbnail: "https://images.unsplash.com/photo-1559827291-72ee739d0d9a?w=400&h=280&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1559827291-72ee739d0d9a?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1528164344705-47542687000d?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1537531383496-f4749b88c23f?w=800&h=600&fit=crop"
+    ],
+    note: "洱海边骑行是最美好的家庭时光，微风拂面，湖水湛蓝，小家伙第一次看到这么大的湖！",
+    guideMap: null, externalLink: null
+  },
+  {
+    id: "3",
+    province: "四川", city: "成都", placeName: "大熊猫繁育研究基地",
+    startDate: "2023-10-01", endDate: "2023-10-03",
+    year: 2023, season: "秋", companions: "全家", days: 3,
+    transport: "高铁", cost: 3500,
+    food: ["火锅", "担担面", "串串香"],
+    tags: ["亲子游", "短途"],
+    coordinates: [30.7322, 104.1421],
+    thumbnail: "https://images.unsplash.com/photo-1564349683136-77e08dba1ef7?w=400&h=280&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1564349683136-77e08dba1ef7?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1589656966895-2f33e7653819?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1536640712-4d4c36ff0e4e?w=800&h=600&fit=crop"
+    ],
+    note: "熊猫太可爱了！孩子说长大要当熊猫饲养员，成都的美食也让全家大饱口福。",
+    guideMap: null, externalLink: "https://www.panda.org.cn/"
+  },
+  {
+    id: "4",
+    province: "上海", city: "上海市", placeName: "迪士尼乐园",
+    startDate: "2024-01-15", endDate: "2024-01-17",
+    year: 2024, season: "冬", companions: "全家", days: 3,
+    transport: "飞机", cost: 6000,
+    food: ["小笼包", "生煎", "本帮菜"],
+    tags: ["亲子游", "主题乐园"],
+    coordinates: [31.1443, 121.6608],
+    thumbnail: "https://images.unsplash.com/photo-1545583943-b484d9737e70?w=400&h=280&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1545583943-b484d9737e70?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1571909552532-6a68d006b640?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1551882548-5d328d4b4aa4?w=800&h=600&fit=crop"
+    ],
+    note: "迪士尼果然是孩子的天堂！晚上的烟花秀太震撼了，全家都感动落泪。",
+    guideMap: null, externalLink: "https://www.shanghaidisneyresort.com/"
+  },
+  {
+    id: "5",
+    province: "浙江", city: "杭州", placeName: "西湖",
+    startDate: "2024-04-10", endDate: "2024-04-12",
+    year: 2024, season: "春", companions: "夫妻二人", days: 3,
+    transport: "高铁", cost: 2500,
+    food: ["西湖醋鱼", "东坡肉", "龙井虾仁"],
+    tags: ["蜜月", "短途"],
+    coordinates: [30.2590, 120.1309],
+    thumbnail: "https://images.unsplash.com/photo-1580761746304-b5d8a3a69b82?w=400&h=280&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1580761746304-b5d8a3a69b82?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1577212017308-9632f41bfc59?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1599571234909-29ed5d1321de?w=800&h=600&fit=crop"
+    ],
+    note: "难得的二人世界，断桥残雪虽然没雪，但春天的西湖别有韵味。",
+    guideMap: null, externalLink: null
+  },
+  {
+    id: "6",
+    province: "海南", city: "三亚", placeName: "亚龙湾",
+    startDate: "2024-07-20", endDate: "2024-07-25",
+    year: 2024, season: "夏", companions: "全家+爷爷奶奶", days: 6,
+    transport: "飞机", cost: 12000,
+    food: ["海鲜大餐", "椰子鸡", "清补凉"],
+    tags: ["亲子游", "长途", "海岛"],
+    coordinates: [18.2248, 109.6410],
+    thumbnail: "https://images.unsplash.com/photo-1544550583-1b56e7b30bb2?w=400&h=280&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1544550583-1b56e7b30bb2?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1540202404-a2f29016b523?w=800&h=600&fit=crop"
+    ],
+    note: "带爸妈和孩子一起看海，三代同游，沙滩上的欢笑声是最珍贵的记忆。",
+    guideMap: null, externalLink: null
+  },
+  {
+    id: "7",
+    province: "陕西", city: "西安", placeName: "兵马俑",
+    startDate: "2024-10-01", endDate: "2024-10-05",
+    year: 2024, season: "秋", companions: "父子二人", days: 5,
+    transport: "高铁", cost: 4000,
+    food: ["肉夹馍", "羊肉泡馍", "biangbiang面"],
+    tags: ["文化", "父子游"],
+    coordinates: [34.3852, 109.2731],
+    thumbnail: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=400&h=280&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1531397237303-6a5d7fe87c8b?w=800&h=600&fit=crop"
+    ],
+    note: "父子俩的历史探索之旅，儿子对秦始皇的故事听得入迷，这趟旅行值了！",
+    guideMap: null, externalLink: null
+  },
+  {
+    id: "8",
+    province: "广东", city: "广州", placeName: "长隆野生动物世界",
+    startDate: "2025-02-01", endDate: "2025-02-03",
+    year: 2025, season: "冬", companions: "全家", days: 3,
+    transport: "高铁", cost: 4500,
+    food: ["肠粉", "虾饺", "烧鹅"],
+    tags: ["亲子游", "短途"],
+    coordinates: [23.0083, 113.2770],
+    thumbnail: "https://images.unsplash.com/photo-1564760290292-23341e4df6ec?w=400&h=280&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1564760290292-23341e4df6ec?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=800&h=600&fit=crop",
+      "https://images.unsplash.com/photo-1535268647677-300dbf3d78d1?w=800&h=600&fit=crop"
+    ],
+    note: "小朋友近距离看到长颈鹿和考拉超兴奋，广州的早茶文化也让人回味无穷。",
+    guideMap: null, externalLink: "https://www.chimelong.com/"
+  }
+];
+
+// ============================================================
+// CUSTOM HOOK: useLocalStorage
+// ============================================================
+function useLocalStorage(key, initialValue) {
+  const [value, setValue] = useState(() => {
+    try {
+      const saved = localStorage.getItem(key);
+      return saved ? JSON.parse(saved) : initialValue;
+    } catch { return initialValue; }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch {}
+  }, [key, value]);
+
+  return [value, setValue];
+}
+
+// ============================================================
+// UTILITY FUNCTIONS
+// ============================================================
+function formatDate(dateStr) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")}`;
+}
+
+function formatCost(n) {
+  if (n >= 10000) return (n/10000).toFixed(1) + "万";
+  if (n >= 1000) return (n/1000).toFixed(1) + "k";
+  return String(n);
+}
+
+// ============================================================
+// TOAST COMPONENT
+// ============================================================
+function Toast({ message, onDone }) {
+  useEffect(() => {
+    const t = setTimeout(onDone, 2800);
+    return () => clearTimeout(t);
+  }, [onDone]);
+  return <div className="toast">{message}</div>;
+}
+
+// ============================================================
+// NAVBAR
+// ============================================================
+function Navbar({ onExport, onAdd }) {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll, {passive:true});
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  return (
+    <nav className={`navbar${scrolled?" scrolled":""}`}>
+      <div className="navbar-inner">
+        <a href="#" className="nav-logo" onClick={e=>{e.preventDefault();window.scrollTo({top:0,behavior:"smooth"});}}>
+          <span className="logo-icon">✦</span>
+          家庭旅行相册
+        </a>
+        <ul className="nav-links">
+          <li><a href="#map-section" onClick={e=>{e.preventDefault();document.getElementById("map-section")?.scrollIntoView({behavior:"smooth"});}}>旅行地图</a></li>
+          <li><a href="#gallery-section" onClick={e=>{e.preventDefault();document.getElementById("gallery-section")?.scrollIntoView({behavior:"smooth"});}}>影像集</a></li>
+          <li><a href="#notes-section" onClick={e=>{e.preventDefault();document.getElementById("notes-section")?.scrollIntoView({behavior:"smooth"});}}>游记</a></li>
+          <li><button className="nav-btn" onClick={onAdd}>+ 记录旅程</button></li>
+        </ul>
+      </div>
+    </nav>
+  );
+}
+
+// ============================================================
+// HERO
+// ============================================================
+function Hero({ totalDestinations, totalDays, totalCost }) {
+  return (
+    <div className="hero">
+      <p className="hero-eyebrow">Family Travel Memories</p>
+      <h1>我们的旅行足迹</h1>
+      <p className="hero-subtitle">每一段旅程，都是家的延伸</p>
+      <div className="hero-line"></div>
+    </div>
+  );
+}
+
+// ============================================================
+// TIMELINE
+// ============================================================
+function Timeline({ data, selectedYear, onYearClick, onTripClick }) {
+  const years = useMemo(() => {
+    const ys = [...new Set(data.map(d=>d.year))].sort((a,b)=>b-a);
+    return ys;
+  }, [data]);
+
+  return (
+    <div className="timeline-col">
+      <div className="timeline-track">
+        <div className="timeline-line"></div>
+        {years.map(year => {
+          const trips = data.filter(d=>d.year===year);
+          const isExpanded = selectedYear === year;
+          const isActive = selectedYear === year;
+          return (
+            <div key={year} className={`timeline-year${isExpanded?" expanded":""}${isActive?" active":""}`}>
+              <span className="timeline-dot"></span>
+              <span style={{display:"block",marginTop:4}} onClick={()=>onYearClick(year)}>{year}</span>
+              <div className="timeline-trips">
+                {trips.map(t=>(
+                  <div key={t.id} className="timeline-trip" onClick={(e)=>{e.stopPropagation();onTripClick(t);}} title={t.placeName}>
+                    {t.placeName}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// MAP VIEW
+// ============================================================
+function MapView({ data, activeId, filteredIds, onMarkerClick }) {
+  const mapContainerRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+  const markersRef = useRef({});
+  const popupRef = useRef(null);
+
+  // Init map
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+    const map = L.map(mapContainerRef.current, {
+      center: [33.5, 107],
+      zoom: 5,
+      zoomControl: true,
+      scrollWheelZoom: true,
+      attributionControl: false
+    });
+
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+      maxZoom: 18,
+      minZoom: 3
+    }).addTo(map);
+
+    // Add minimalist attribution
+    L.control.attribution({position:"bottomleft",prefix:""}).addTo(map);
+
+    mapInstanceRef.current = map;
+
+    // Resize handler
+    const ro = new ResizeObserver(() => { map.invalidateSize(); });
+    ro.observe(mapContainerRef.current);
+
+    return () => {
+      ro.disconnect();
+      map.remove();
+      mapInstanceRef.current = null;
+    };
+  }, []);
+
+  // Update markers
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    // Clear old markers
+    Object.values(markersRef.current).forEach(m => m.remove());
+    markersRef.current = {};
+
+    const filteredData = filteredIds ? data.filter(d => filteredIds.has(d.id)) : data;
+
+    filteredData.forEach(dest => {
+      const isActive = dest.id === activeId;
+      const icon = L.divIcon({
+        className: "custom-marker-container",
+        html: `<div class="pulse-marker${isActive?" active":""}"></div>`,
+        iconSize: [34, 34],
+        iconAnchor: [17, 17],
+        popupAnchor: [0, -20]
+      });
+
+      const marker = L.marker(dest.coordinates, { icon }).addTo(map);
+
+      const popupContent = `
+        <div class="map-popup-card">
+          <img src="${dest.thumbnail}" alt="${dest.placeName}" onerror="this.style.display='none'"/>
+          <div class="popup-body">
+            <h4>${dest.placeName}</h4>
+            <div class="popup-loc">${dest.province} · ${dest.city}</div>
+            <div class="popup-date">${formatDate(dest.startDate)}${dest.endDate!==dest.startDate?" — "+formatDate(dest.endDate):""}</div>
+          </div>
+        </div>
+      `;
+      marker.bindPopup(popupContent, { maxWidth: 260, closeButton: true, className:"custom-popup" });
+
+      marker.on("click", () => {
+        onMarkerClick(dest.id);
+      });
+
+      marker.on("mouseover", function() {
+        if (!this.getPopup().isOpen()) this.openPopup();
+      });
+
+      markersRef.current[dest.id] = marker;
+    });
+  }, [data, activeId, filteredIds, onMarkerClick]);
+
+  // Fly to active marker
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !activeId) return;
+    const dest = data.find(d => d.id === activeId);
+    if (!dest) return;
+    map.flyTo(dest.coordinates, 12, { duration: 1.2 });
+    const marker = markersRef.current[activeId];
+    if (marker && !marker.getPopup().isOpen()) {
+      setTimeout(() => marker.openPopup(), 800);
+    }
+  }, [activeId, data]);
+
+  return <div className="map-col" id="map-section">
+    <div className="map-wrapper"><div id="map" ref={mapContainerRef}></div></div>
+  </div>;
+}
+
+// ============================================================
+// DESTINATION CARD
+// ============================================================
+function DestinationCard({ dest, isActive, onClick, onEdit, onDelete, onPhotoClick }) {
+  const [imgIdx, setImgIdx] = useState(0);
+  const allImages = [dest.thumbnail, ...(dest.images||[])];
+
+  const prevImg = (e) => { e.stopPropagation(); setImgIdx(i=>(i-1+allImages.length)%allImages.length); };
+  const nextImg = (e) => { e.stopPropagation(); setImgIdx(i=>(i+1)%allImages.length); };
+
+  return (
+    <div className={`dest-card${isActive?" active":""}`} onClick={()=>onClick(dest.id)}>
+      <div className="card-thumb-area">
+        <img
+          src={allImages[imgIdx]}
+          alt={dest.placeName}
+          onError={(e)=>{e.target.style.display="none"}}
+          onClick={(e)=>{e.stopPropagation();onPhotoClick(allImages,imgIdx);}}
+        />
+        {allImages.length > 1 && <>
+          <button className="card-arrow left" onClick={prevImg}>‹</button>
+          <button className="card-arrow right" onClick={nextImg}>›</button>
+          <div className="card-thumb-nav">
+            {allImages.map((_,i)=>(
+              <div key={i} className={`thumb-dot${i===imgIdx?" active":""}`}></div>
+            ))}
+          </div>
+        </>}
+      </div>
+      <div className="card-body">
+        <div className="card-header">
+          <span className="card-title">{dest.placeName}</span>
+          <span className="card-location">{dest.province}·{dest.city}</span>
+        </div>
+        <div className="card-meta">
+          <span>📅 {formatDate(dest.startDate)}</span>
+          <span>⏱ {dest.days}天</span>
+          <span>👥 {dest.companions}</span>
+        </div>
+        {dest.note && <div className="card-note">{dest.note}</div>}
+        <div className="card-actions">
+          <button className="card-action-btn" onClick={(e)=>{e.stopPropagation();onEdit(dest);}}>✎ 编辑</button>
+          <button className="card-action-btn danger" onClick={(e)=>{e.stopPropagation();onDelete(dest.id);}}>✕ 删除</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// SIDE PANEL
+// ============================================================
+function SidePanel({ data, activeId, onSelect, onAdd, onEdit, onDelete, onPhotoClick, onExport }) {
+  const [activeTags, setActiveTags] = useState([]);
+
+  const allTags = useMemo(() => {
+    const tags = new Set();
+    data.forEach(d => d.tags.forEach(t => tags.add(t)));
+    return [...tags].sort();
+  }, [data]);
+
+  const filteredData = useMemo(() => {
+    if (activeTags.length === 0) return data;
+    return data.filter(d => d.tags.some(t => activeTags.includes(t)));
+  }, [data, activeTags]);
+
+  const toggleTag = (tag) => {
+    setActiveTags(prev => prev.includes(tag) ? prev.filter(t=>t!==tag) : [...prev, tag]);
+  };
+
+  return (
+    <div className="side-panel">
+      <div className="side-panel-header">
+        <div className="side-panel-title">旅行目的地</div>
+        <div className="tag-filters">
+          {allTags.map(tag => (
+            <button key={tag} className={`tag-pill${activeTags.includes(tag)?" active":""}`} onClick={()=>toggleTag(tag)}>
+              {tag}
+            </button>
+          ))}
+          {activeTags.length > 0 && (
+            <button className="tag-pill" style={{borderStyle:"solid",color:"var(--text-muted)"}} onClick={()=>setActiveTags([])}>
+              清除筛选
+            </button>
+          )}
+        </div>
+        <div className="side-panel-actions">
+          <button className="btn-add" onClick={onAdd}>+ 新增目的地</button>
+          <button className="btn-export" onClick={onExport} title="导出 JSON 数据备份">⬇ 导出数据</button>
+        </div>
+      </div>
+      <div className="cards-list">
+        {filteredData.map(dest => (
+          <DestinationCard
+            key={dest.id}
+            dest={dest}
+            isActive={dest.id === activeId}
+            onClick={onSelect}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onPhotoClick={onPhotoClick}
+          />
+        ))}
+        {filteredData.length === 0 && (
+          <div style={{textAlign:"center",padding:40,color:"var(--text-muted)",fontSize:"0.8rem"}}>
+            没有匹配的旅行目的地
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// ADD/EDIT MODAL
+// ============================================================
+function AddEditModal({ dest, onSave, onClose }) {
+  const isEdit = !!dest;
+  const [form, setForm] = useState(dest || {
+    province: "", city: "", placeName: "",
+    startDate: "", endDate: "",
+    year: new Date().getFullYear(), season: "春",
+    companions: "全家", days: 1, transport: "",
+    cost: 0, food: [], tags: [],
+    coordinates: [30, 110],
+    thumbnail: "", images: [""],
+    note: "", externalLink: ""
+  });
+
+  const [foodStr, setFoodStr] = useState((dest?.food||[]).join("、"));
+  const [tagsStr, setTagsStr] = useState((dest?.tags||[]).join("、"));
+  const [imagesStr, setImagesStr] = useState((dest?.images||[""]).join("\n"));
+
+  const handleSave = () => {
+    const data = {
+      ...form,
+      id: dest?.id || String(Date.now()),
+      food: foodStr.split(/[、,，]/).map(s=>s.trim()).filter(Boolean),
+      tags: tagsStr.split(/[、,，]/).map(s=>s.trim()).filter(Boolean),
+      images: imagesStr.split("\n").map(s=>s.trim()).filter(Boolean),
+      days: Number(form.days) || 1,
+      cost: Number(form.cost) || 0,
+      year: Number(form.year) || new Date().getFullYear(),
+      coordinates: [Number(form.coordinates[0]), Number(form.coordinates[1])]
+    };
+    if (!data.thumbnail && data.images.length > 0) data.thumbnail = data.images[0];
+    onSave(data);
+  };
+
+  const updateField = (field, value) => setForm(prev=>({...prev,[field]:value}));
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-dialog" onClick={e=>e.stopPropagation()}>
+        <h3>{isEdit ? "编辑旅行记录" : "新增旅行记录"}</h3>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>省份</label>
+            <input value={form.province} onChange={e=>updateField("province",e.target.value)} placeholder="如：云南"/>
+          </div>
+          <div className="form-group">
+            <label>城市</label>
+            <input value={form.city} onChange={e=>updateField("city",e.target.value)} placeholder="如：大理"/>
+          </div>
+        </div>
+        <div className="form-group">
+          <label>目的地名称 *</label>
+          <input value={form.placeName} onChange={e=>updateField("placeName",e.target.value)} placeholder="如：洱海"/>
+        </div>
+        <div className="form-row">
+          <div className="form-group">
+            <label>开始日期</label>
+            <input type="date" value={form.startDate} onChange={e=>{updateField("startDate",e.target.value);if(e.target.value)updateField("year",new Date(e.target.value).getFullYear());}}/>
+          </div>
+          <div className="form-group">
+            <label>结束日期</label>
+            <input type="date" value={form.endDate} onChange={e=>updateField("endDate",e.target.value)}/>
+          </div>
+        </div>
+        <div className="form-row">
+          <div className="form-group">
+            <label>同行人</label>
+            <select value={form.companions} onChange={e=>updateField("companions",e.target.value)}>
+              <option>全家</option><option>夫妻二人</option><option>父子二人</option><option>母女二人</option><option>全家+爷爷奶奶</option><option>独自</option><option>朋友</option>
+            </select>
+          </div>
+          <div className="form-group">
+            <label>天数</label>
+            <input type="number" value={form.days} onChange={e=>updateField("days",e.target.value)} min="1"/>
+          </div>
+        </div>
+        <div className="form-row">
+          <div className="form-group">
+            <label>季节</label>
+            <select value={form.season} onChange={e=>updateField("season",e.target.value)}>
+              <option>春</option><option>夏</option><option>秋</option><option>冬</option>
+            </select>
+          </div>
+          <div className="form-group">
+            <label>交通方式</label>
+            <input value={form.transport} onChange={e=>updateField("transport",e.target.value)} placeholder="如：高铁"/>
+          </div>
+        </div>
+        <div className="form-row">
+          <div className="form-group">
+            <label>费用（元）</label>
+            <input type="number" value={form.cost} onChange={e=>updateField("cost",e.target.value)} min="0"/>
+          </div>
+          <div className="form-group">
+            <label>纬度,经度</label>
+            <input value={form.coordinates.join(",")} onChange={e=>{const parts=e.target.value.split(",");if(parts.length===2)updateField("coordinates",[parts[0].trim(),parts[1].trim()]);}} placeholder="如：25.6,100.2"/>
+          </div>
+        </div>
+        <div className="form-group">
+          <label>美食（用顿号分隔）</label>
+          <input value={foodStr} onChange={e=>setFoodStr(e.target.value)} placeholder="如：过桥米线、乳扇"/>
+        </div>
+        <div className="form-group">
+          <label>标签（用顿号分隔）</label>
+          <input value={tagsStr} onChange={e=>setTagsStr(e.target.value)} placeholder="如：亲子游、长途、海岛"/>
+        </div>
+        <div className="form-group">
+          <label>缩略图 URL</label>
+          <input value={form.thumbnail} onChange={e=>updateField("thumbnail",e.target.value)} placeholder="https://..."/>
+        </div>
+        <div className="form-group">
+          <label>图片 URLs（每行一个）</label>
+          <textarea value={imagesStr} onChange={e=>setImagesStr(e.target.value)} placeholder="https://...&#10;https://..." rows={3}/>
+        </div>
+        <div className="form-group">
+          <label>游记/备注</label>
+          <textarea value={form.note} onChange={e=>updateField("note",e.target.value)} placeholder="记录旅途中的美好回忆..." rows={3}/>
+        </div>
+
+        <div className="form-actions">
+          <button className="btn-cancel" onClick={onClose}>取消</button>
+          <button className="btn-save" onClick={handleSave}>{isEdit?"保存修改":"添加记录"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// SUMMARY BAR
+// ============================================================
+function SummaryBar({ data, onPhotoClick }) {
+  const stats = useMemo(() => {
+    const totalDest = data.length;
+    const totalDays = data.reduce((s,d)=>s+(d.days||0), 0);
+    const totalCost = data.reduce((s,d)=>s+(d.cost||0), 0);
+    const provinces = new Set(data.map(d=>d.province));
+    const cities = new Set(data.map(d=>d.city));
+    const companions = new Set(data.map(d=>d.companions));
+    const allFood = data.flatMap(d=>d.food||[]);
+    return { totalDest, totalDays, totalCost: formatCost(totalCost), provinces: provinces.size, cities: cities.size, companions: companions.size, topFood: [...new Set(allFood)].slice(0,5).join(" · ") };
+  }, [data]);
+
+  // Build waterfall images (all images across all destinations)
+  const waterfallImages = useMemo(() => {
+    return data.flatMap(d => {
+      const imgs = [d.thumbnail, ...(d.images||[])];
+      return imgs.filter(Boolean).map((url,i)=>({url, location:`${d.province}·${d.city}`, placeName:d.placeName, date:formatDate(d.startDate), destId:d.id, imgIdx:i}));
+    });
+  }, [data]);
+
+  return (
+    <div className="summary-bar" id="gallery-section">
+      <div className="summary-bar-inner">
+
+        {/* Stats */}
+        <div className="stats-row">
+          <div className="stat-item">
+            <div className="stat-number">{stats.totalDest}<span className="unit">个</span></div>
+            <div className="stat-label">旅行目的地</div>
+            <div className="stat-detail">跨越 {stats.provinces} 个省份 · {stats.cities} 座城市</div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-number">{stats.totalDays}<span className="unit">天</span></div>
+            <div className="stat-label">累计旅程</div>
+            <div className="stat-detail">与 {stats.companions} 种同行组合共度</div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-number">{stats.totalCost}<span className="unit">元</span></div>
+            <div className="stat-label">旅行花费</div>
+            <div className="stat-detail">舌尖记忆：{stats.topFood}</div>
+          </div>
+        </div>
+
+        {/* Waterfall Gallery */}
+        <div className="gallery-section-title">旅途光影</div>
+        <div className="gallery-section-sub">每一帧，都是时光的标本</div>
+        <div className="waterfall-gallery">
+          {waterfallImages.map((img,i) => (
+            <div
+              key={i}
+              className="waterfall-item"
+              onClick={() => {
+                const dest = data.find(d=>d.id===img.destId);
+                if (dest) {
+                  const allImgs = [dest.thumbnail, ...(dest.images||[])];
+                  onPhotoClick(allImgs.filter(Boolean), img.imgIdx);
+                }
+              }}
+            >
+              <img
+                src={img.url}
+                alt={img.placeName}
+                loading="lazy"
+                style={{width:"100%",display:"block"}}
+                onError={(e)=>{e.target.style.display="none";e.target.parentElement.style.display="none"}}
+              />
+              <div className="waterfall-overlay">
+                <span className="wf-location">{img.placeName}</span>
+                <span className="wf-date">{img.location} · {img.date}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Travel Notes */}
+        <div id="notes-section">
+          <div className="notes-section-title">旅行手记</div>
+          <div className="gallery-section-sub" style={{marginBottom:28}}>旅途中的只言片语</div>
+          <div className="notes-grid">
+            {data.filter(d=>d.note).map(d => (
+              <div key={d.id} className="note-card" onClick={()=>window.scrollTo({top:0,behavior:"smooth"})}>
+                <div className="note-date">{formatDate(d.startDate)} · {d.province}{d.city}</div>
+                <div className="note-title">{d.placeName}</div>
+                <div className="note-excerpt">{d.note}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// FOOTER
+// ============================================================
+function Footer({ onExport, onImport }) {
+  const fileRef = useRef(null);
+
+  const handleImport = () => {
+    const file = fileRef.current?.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (Array.isArray(data)) {
+          onImport(data);
+        } else {
+          alert("无效的数据格式，请导入包含旅行数据数组的 JSON 文件。");
+        }
+      } catch {
+        alert("JSON 解析失败，请检查文件格式。");
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  return (
+    <footer className="footer">
+      <div className="footer-inner">
+        <p className="footer-text">© 2025 家庭旅行相册 · 用心记录每一段旅程</p>
+        <div className="footer-links">
+          <button onClick={onExport}>⬇ JSON 备份导出</button>
+          <label style={{cursor:"pointer",fontSize:"0.73rem",color:"var(--text-muted)",transition:"var(--transition)"}}
+            onMouseEnter={e=>e.target.style.color="var(--gold-light)"}
+            onMouseLeave={e=>e.target.style.color="var(--text-muted)"}>
+            ⬆ 导入数据恢复
+            <input type="file" accept=".json" ref={fileRef} onChange={handleImport} style={{display:"none"}}/>
+          </label>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+// ============================================================
+// IMAGE VIEWER
+// ============================================================
+function ImageViewer({ images, startIndex, onClose }) {
+  const [index, setIndex] = useState(startIndex || 0);
+  const validImages = useMemo(() => images.filter(Boolean), [images]);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft") setIndex(i=>(i-1+validImages.length)%validImages.length);
+      if (e.key === "ArrowRight") setIndex(i=>(i+1)%validImages.length);
+    };
+    window.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [onClose, validImages.length]);
+
+  if (validImages.length === 0) return null;
+
+  return (
+    <div className="image-viewer-overlay" onClick={onClose}>
+      <button className="viewer-close" onClick={onClose}>✕</button>
+      <div className="viewer-info">{index+1} / {validImages.length}</div>
+      <div className="viewer-main" onClick={e=>e.stopPropagation()}>
+        <button className="viewer-nav prev" onClick={()=>setIndex(i=>(i-1+validImages.length)%validImages.length)}>‹</button>
+        <img key={index} src={validImages[index]} alt="" onError={(e)=>{e.target.style.display="none"}}/>
+        <button className="viewer-nav next" onClick={()=>setIndex(i=>(i+1)%validImages.length)}>›</button>
+      </div>
+      <div className="viewer-thumbnails" onClick={e=>e.stopPropagation()}>
+        {validImages.map((img,i)=>(
+          <div key={i} className={`viewer-thumb${i===index?" active":""}`} onClick={()=>setIndex(i)}>
+            <img src={img} alt="" onError={(e)=>{e.target.style.display="none"}}/>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// MAIN APP
+// ============================================================
+function App() {
+  const [travelData, setTravelData] = useLocalStorage("familyTravelData_v2", defaultTravelData);
+  const [activeId, setActiveId] = useState(null);
+  const [selectedYear, setSelectedYear] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [editingDest, setEditingDest] = useState(null);
+  const [toastMsg, setToastMsg] = useState(null);
+  const [viewer, setViewer] = useState(null); // {images, startIndex}
+
+  // Filtered IDs for map (based on selected year)
+  const filteredMapIds = useMemo(() => {
+    if (!selectedYear) return null;
+    const ids = new Set(travelData.filter(d=>d.year===selectedYear).map(d=>d.id));
+    return ids.size > 0 ? ids : null;
+  }, [travelData, selectedYear]);
+
+  const handleYearClick = (year) => {
+    setSelectedYear(prev => prev===year ? null : year);
+  };
+
+  const handleTripClick = (dest) => {
+    setActiveId(dest.id);
+    setSelectedYear(dest.year);
+  };
+
+  const handleMarkerClick = (id) => {
+    setActiveId(id);
+    // Scroll card into view
+    setTimeout(() => {
+      const cards = document.querySelectorAll(".dest-card.active");
+      if (cards.length > 0) cards[0].scrollIntoView({behavior:"smooth",block:"center"});
+    }, 100);
+  };
+
+  const handleSelectCard = (id) => {
+    setActiveId(id);
+  };
+
+  const handleAdd = () => {
+    setEditingDest(null);
+    setShowModal(true);
+  };
+
+  const handleEdit = (dest) => {
+    setEditingDest(dest);
+    setShowModal(true);
+  };
+
+  const handleDelete = (id) => {
+    if (!window.confirm("确定要删除这条旅行记录吗？此操作不可撤销。")) return;
+    setTravelData(prev => prev.filter(d=>d.id!==id));
+    if (activeId === id) setActiveId(null);
+    setToastMsg("已删除旅行记录");
+  };
+
+  const handleSave = (data) => {
+    if (editingDest) {
+      setTravelData(prev => prev.map(d=>d.id===data.id?data:d));
+      setToastMsg("旅行记录已更新 ✓");
+    } else {
+      setTravelData(prev => [data, ...prev]);
+      setToastMsg("旅行记录已添加 ✓");
+    }
+    setShowModal(false);
+    setEditingDest(null);
+    if (data.id) setActiveId(data.id);
+  };
+
+  const handleExport = () => {
+    const blob = new Blob([JSON.stringify(travelData, null, 2)], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `family-travel-backup-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setToastMsg("数据已导出 ✓");
+  };
+
+  const handleImport = (data) => {
+    if (window.confirm(`即将导入 ${data.length} 条旅行记录，当前数据将被覆盖。确认继续？`)) {
+      setTravelData(data);
+      setActiveId(null);
+      setSelectedYear(null);
+      setToastMsg(`成功导入 ${data.length} 条旅行记录 ✓`);
+    }
+  };
+
+  const handlePhotoClick = (images, startIdx) => {
+    setViewer({images, startIndex: startIdx||0});
+  };
+
+  return (
+    <div>
+      <Navbar onExport={handleExport} onAdd={handleAdd} />
+      <Hero
+        totalDestinations={travelData.length}
+        totalDays={travelData.reduce((s,d)=>s+(d.days||0),0)}
+        totalCost={travelData.reduce((s,d)=>s+(d.cost||0),0)}
+      />
+
+      <div className="main-content">
+        <Timeline
+          data={travelData}
+          selectedYear={selectedYear}
+          onYearClick={handleYearClick}
+          onTripClick={handleTripClick}
+        />
+
+        <MapView
+          data={travelData}
+          activeId={activeId}
+          filteredIds={filteredMapIds}
+          onMarkerClick={handleMarkerClick}
+        />
+
+        <SidePanel
+          data={travelData}
+          activeId={activeId}
+          onSelect={handleSelectCard}
+          onAdd={handleAdd}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onPhotoClick={handlePhotoClick}
+          onExport={handleExport}
+        />
+      </div>
+
+      <SummaryBar data={travelData} onPhotoClick={handlePhotoClick} />
+      <Footer onExport={handleExport} onImport={handleImport} />
+
+      {showModal && (
+        <AddEditModal
+          dest={editingDest}
+          onSave={handleSave}
+          onClose={()=>{setShowModal(false);setEditingDest(null);}}
+        />
+      )}
+
+      {viewer && (
+        <ImageViewer
+          images={viewer.images}
+          startIndex={viewer.startIndex}
+          onClose={()=>setViewer(null)}
+        />
+      )}
+
+      {toastMsg && <Toast message={toastMsg} onDone={()=>setToastMsg(null)}/>}
+    </div>
+  );
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
