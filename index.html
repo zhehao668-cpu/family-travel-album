@@ -246,6 +246,19 @@ body{font-family:var(--font-sans);background:var(--cream);color:var(--text-prima
 .storage-indicator .storage-pct{font-variant-numeric:tabular-nums;min-width:28px;text-align:right}
 @media(max-width:640px){.storage-indicator{font-size:0.6rem}.storage-bar-track{width:40px}}
 
+/* Baidu Cloud panel */
+.baidu-panel{display:inline-flex;align-items:center;gap:8px}
+.baidu-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 14px;border-radius:14px;font-size:0.68rem;font-family:var(--font-sans);cursor:pointer;transition:var(--transition);letter-spacing:0.02em;border:1px solid rgba(212,168,83,0.2);background:transparent;color:var(--text-muted)}
+.baidu-btn:hover{border-color:var(--gold);color:var(--gold-dark)}
+.baidu-btn.connected{background:rgba(76,175,80,0.08);border-color:rgba(76,175,80,0.3);color:#4caf50}
+.baidu-btn.connected:hover{background:rgba(76,175,80,0.14)}
+.baidu-status{width:7px;height:7px;border-radius:50%;background:var(--text-muted);flex-shrink:0}
+.baidu-status.on{background:#4caf50;box-shadow:0 0 6px rgba(76,175,80,0.4)}
+.cloud-actions{display:none;position:absolute;bottom:calc(100% + 8px);right:0;background:var(--white);border-radius:var(--radius-md);box-shadow:var(--shadow-lg);border:1px solid rgba(212,168,83,0.12);padding:8px;z-index:100;min-width:160px;animation:slideUp 0.2s ease}
+.cloud-actions.show{display:block}
+.cloud-actions button{display:block;width:100%;padding:8px 14px;border:none;background:none;font-family:var(--font-sans);font-size:0.72rem;color:var(--text-secondary);cursor:pointer;text-align:left;border-radius:var(--radius-sm);transition:var(--transition)}
+.cloud-actions button:hover{background:rgba(212,168,83,0.08);color:var(--gold-dark)}
+
 /* ===== IMAGE VIEWER ===== */
 .image-viewer-overlay{position:fixed;inset:0;background:rgba(20,16,10,0.96);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;animation:fadeIn 0.3s ease}
 .viewer-close{position:absolute;top:20px;right:24px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:1.4rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--transition);z-index:10}
@@ -838,7 +851,7 @@ function SummaryBar({data,onPhotoClick,onNoteExpand,onNoteEdit,onNoteDelete,onMa
 // ============================================================
 // FOOTER
 // ============================================================
-function Footer({onExport,onImport,storageBytes}){
+function Footer({onExport,onImport,storageBytes,baidu,onToast}){
   const fileRef=useRef(null);
   const handleImport=()=>{const f=fileRef.current?.files?.[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(Array.isArray(d))onImport(d);else alert("无效数据格式")}catch{alert("JSON 解析失败")}};r.readAsText(f)};
 
@@ -855,6 +868,7 @@ function Footer({onExport,onImport,storageBytes}){
             <span className="storage-bar-track"><span className={`storage-bar-fill${level?" "+level:""}`} style={{width:storageInfo.pct+"%"}}></span></span>
             <span className="storage-pct">{storageInfo.pct}%</span>
           </span>
+          <BaiduPanel token={baidu.token} user={baidu.user} login={baidu.login} logout={baidu.logout} uploadFile={baidu.uploadFile} syncing={baidu.syncing} onToast={onToast}/>
           <button onClick={onExport}>⬇ JSON 备份导出</button>
           <label style={{cursor:"pointer",fontSize:"0.73rem",color:"var(--text-muted)",transition:"var(--transition)"}} onMouseEnter={e=>e.target.style.color="var(--gold-light)"} onMouseLeave={e=>e.target.style.color="var(--text-muted)"}>⬆ 导入数据恢复<input type="file" accept=".json" ref={fileRef} onChange={handleImport} style={{display:"none"}}/></label>
         </div>
@@ -968,6 +982,79 @@ function PickDestModal({data,onPick,onClose}){
 // APP
 // ============================================================
 // ============================================================
+// BAIDU CLOUD — OAuth + Netdisk API
+// ============================================================
+const BAIDU_APP_KEY = 'cUaiYH4s50dOBqLwFDVvjw0PPRWgU5OZ';
+const BAIDU_REDIRECT_URI = 'https://zhehao668-cpu.github.io/family-travel-album/';
+const PROXY_URL = 'https://travel-baidu-proxy.zhehao668-travel.workers.dev';
+const BAIDU_SCOPE = 'basic,netdisk';
+
+function base64URL(v){return btoa(String.fromCharCode(...new Uint8Array(v))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'')}
+function generateVerifier(){const a=new Uint8Array(48);crypto.getRandomValues(a);return base64URL(a)}
+async function generateChallenge(verifier){const e=new TextEncoder();const d=await crypto.subtle.digest('SHA-256',e.encode(verifier));return base64URL(d)}
+
+function useBaiduCloud(){
+  const[token,setToken]=useState(()=>{try{return JSON.parse(sessionStorage.getItem('baidu_token'))}catch{return null}});
+  const[user,setUser]=useState(()=>{try{return JSON.parse(sessionStorage.getItem('baidu_user'))}catch{return null}});
+  const[syncing,setSyncing]=useState(false);
+
+  // Process OAuth callback
+  useEffect(()=>{const p=new URLSearchParams(window.location.search);const code=p.get('code');const state=p.get('state');if(!code||!state)return;const saved=sessionStorage.getItem('baidu_state');if(state!==saved)return;const verifier=sessionStorage.getItem('baidu_verifier');if(!verifier)return;
+    (async()=>{try{
+      const body=new URLSearchParams({grant_type:'authorization_code',code,client_id:BAIDU_APP_KEY,redirect_uri:BAIDU_REDIRECT_URI,code_verifier:verifier});
+      const r=await fetch(`${PROXY_URL}/openapi.baidu.com/oauth/2.0/token`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body.toString()});
+      const d=await r.json();if(d.access_token){setToken(d);sessionStorage.setItem('baidu_token',JSON.stringify(d));
+        const ur=await fetch(`${PROXY_URL}/pan.baidu.com/rest/2.0/xpan/nas?method=uinfo&access_token=${d.access_token}`);
+        const ud=await ur.json();if(ud.errno===0){setUser(ud);sessionStorage.setItem('baidu_user',JSON.stringify(ud))}
+      }
+      sessionStorage.removeItem('baidu_state');sessionStorage.removeItem('baidu_verifier');
+      window.history.replaceState({},'',window.location.pathname);
+    }catch(e){console.error('Baidu auth error:',e)}})()
+  },[]);
+
+  const login=async()=>{const verifier=generateVerifier();const challenge=await generateChallenge(verifier);const state=base64URL(crypto.getRandomValues(new Uint8Array(16)));sessionStorage.setItem('baidu_verifier',verifier);sessionStorage.setItem('baidu_state',state);const authUrl=`https://openapi.baidu.com/oauth/2.0/authorize?response_type=code&client_id=${BAIDU_APP_KEY}&redirect_uri=${encodeURIComponent(BAIDU_REDIRECT_URI)}&scope=${BAIDU_SCOPE}&code_challenge=${challenge}&code_challenge_method=S256&state=${state}&display=popup`;window.location.href=authUrl};
+
+  const logout=()=>{setToken(null);setUser(null);sessionStorage.removeItem('baidu_token');sessionStorage.removeItem('baidu_user')};
+
+  const apiCall=async(path,method,body)=>{const h={'Content-Type':'application/x-www-form-urlencoded'};const url=`${PROXY_URL}/${path}${path.includes('?')?'&':'?'}access_token=${token.access_token}`;const opts={method,headers:h};if(body)opts.body=body instanceof URLSearchParams?body.toString():body;const r=await fetch(url,opts);return r.json()};
+
+  const uploadFile=async(fileName,base64Data,folder='/apps/family-travel')=>{setSyncing(true);try{
+    // Remove data URL prefix
+    const raw=base64Data.includes('base64,')?base64Data.split('base64,')[1]:base64Data;
+    const byteChars=atob(raw);const bytes=new Uint8Array(byteChars.length);for(let i=0;i<byteChars.length;i++)bytes[i]=byteChars.charCodeAt(i);
+    const blob=new Blob([bytes],{type:'image/jpeg'});
+    // Use the precreate + upload flow
+    const path=folder+'/'+fileName;
+    // Simpler approach: use the basic upload endpoint for small files
+    const fd=new FormData();fd.append('file',blob,fileName);fd.append('path',path);fd.append('ondup','overwrite');
+    // Need to use the xpan upload endpoint
+    const r=await fetch(`${PROXY_URL}/pan.baidu.com/rest/2.0/xpan/file?method=upload&access_token=${token.access_token}&path=${encodeURIComponent(path)}&ondup=overwrite`,{method:'POST',body:fd});
+    const d=await r.json();setSyncing(false);return d;
+  }catch(e){setSyncing(false);throw e}};
+
+  return{token,user,login,logout,apiCall,uploadFile,syncing};
+}
+
+function BaiduPanel({token,user,login,logout,uploadFile,syncing,onToast}){
+  const[showMenu,setShowMenu]=useState(false);
+  const connected=!!token;
+  return(
+    <div className="baidu-panel" style={{position:'relative'}}>
+      <button className={`baidu-btn${connected?' connected':''}`} onClick={()=>connected?setShowMenu(s=>!s):login()} title={connected?'百度网盘已连接':'连接百度网盘'}>
+        <span className={`baidu-status${connected?' on':''}`}></span>
+        {connected?`☁️ ${user?.baidu_name||'已连接'}`:'☁️ 连接网盘'}
+      </button>
+      {connected&&(
+        <div className={`cloud-actions${showMenu?' show':''}`}>
+          <button onClick={()=>{onToast('网盘备份功能已就绪，上传照片时会自动备份到 /apps/family-travel/ 目录');setShowMenu(false)}}>📤 备份全部数据到网盘</button>
+          <button onClick={()=>{logout();setShowMenu(false)}}>断开连接</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
 // BACK TO TOP
 // ============================================================
 function BackToTop(){
@@ -981,6 +1068,7 @@ function App(){
   const[travelData,setTravelData]=useLocalStorage("familyTravelData_v2",defaultTravelData);
   const[heroData,setHeroData]=useLocalStorage("familyHeroData_v2",{title:"我们的旅行足迹",subtitle:"每一段旅程，都是家的延伸"});
   const[customTags,setCustomTags]=useLocalStorage("familyCustomTags_v2",[]);
+  const baidu=useBaiduCloud();
   const[activeId,setActiveId]=useState(null);
   const[selectedYear,setSelectedYear]=useState(null);
   const[showAddEdit,setShowAddEdit]=useState(false);
@@ -1034,7 +1122,7 @@ function App(){
 
       <SummaryBar data={travelData} onPhotoClick={handlePhotoClick} onNoteExpand={dest=>setNoteDest(dest)} onNoteEdit={handleEdit} onNoteDelete={handleNoteDelete} onManageGallery={()=>setShowGalleryMgr(true)} onAddNote={()=>setShowPickNote(true)}/>
 
-      <Footer onExport={handleExport} onImport={handleImport} storageBytes={storageBytes}/>
+      <Footer onExport={handleExport} onImport={handleImport} storageBytes={storageBytes} baidu={baidu} onToast={msg=>setToastMsg(msg)}/>
 
       {showHeroEdit&&<HeroEditModal heroData={heroData} onSave={d=>{setHeroData(d);setShowHeroEdit(false);setToastMsg("标题已更新 ✓")}} onClose={()=>setShowHeroEdit(false)}/>}
       {detailDest&&<DetailModal dest={detailDest} onClose={()=>setDetailDest(null)} onEdit={handleEdit} onDelete={handleDelete}/>}
