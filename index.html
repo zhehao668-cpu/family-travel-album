@@ -260,6 +260,30 @@ body{font-family:var(--font-sans);background:var(--cream);color:var(--text-prima
 @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 @keyframes toastOut{from{opacity:1}to{opacity:0}}
 
+/* ===== SEARCH BAR ===== */
+.nav-search-wrap{position:relative;margin-right:4px}
+.nav-search-input{width:180px;padding:7px 14px 7px 32px;border:1px solid rgba(212,168,83,0.2);border-radius:18px;background:rgba(255,248,240,0.6);font-family:var(--font-sans);font-size:0.75rem;color:var(--text-primary);transition:var(--transition);outline:none;letter-spacing:0.02em}
+.nav-search-input:focus{width:220px;border-color:var(--gold);background:var(--white);box-shadow:0 2px 12px rgba(212,168,83,0.1)}
+.nav-search-input::placeholder{color:var(--text-muted);font-size:0.7rem}
+.nav-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:0.7rem;color:var(--text-muted);pointer-events:none;transition:var(--transition)}
+.nav-search-wrap:focus-within .nav-search-icon{color:var(--gold)}
+.search-results{position:absolute;top:calc(100% + 6px);right:0;width:300px;background:var(--white);border-radius:var(--radius-md);box-shadow:var(--shadow-xl);border:1px solid rgba(212,168,83,0.12);overflow:hidden;z-index:1100;animation:slideUp 0.2s ease}
+.search-result-item{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;transition:var(--transition);border-bottom:1px solid var(--cream-darker)}
+.search-result-item:last-child{border-bottom:none}
+.search-result-item:hover{background:rgba(212,168,83,0.05)}
+.search-result-item .sr-thumb{width:36px;height:28px;border-radius:4px;object-fit:cover;flex-shrink:0;background:var(--cream-dark)}
+.search-result-item .sr-info{flex:1;min-width:0}
+.search-result-item .sr-name{font-family:var(--font-serif);font-size:0.78rem;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.search-result-item .sr-meta{font-size:0.63rem;color:var(--text-muted);margin-top:1px}
+.search-result-item .sr-arrow{color:var(--gold);font-size:0.8rem;flex-shrink:0}
+.search-no-results{padding:20px;text-align:center;font-size:0.73rem;color:var(--text-muted)}
+
+/* ===== BACK TO TOP ===== */
+.back-to-top{position:fixed;right:24px;bottom:40px;width:38px;height:38px;border-radius:50%;background:rgba(212,168,83,0.15);border:1px solid rgba(212,168,83,0.2);color:var(--gold-dark);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--transition);z-index:900;opacity:0;transform:translateY(10px);pointer-events:none;backdrop-filter:blur(4px)}
+.back-to-top.visible{opacity:1;transform:translateY(0);pointer-events:auto}
+.back-to-top:hover{background:rgba(212,168,83,0.3);border-color:var(--gold);transform:translateY(-2px);box-shadow:0 4px 16px rgba(184,134,11,0.15)}
+@media(max-width:640px){.back-to-top{right:12px;bottom:20px;width:34px;height:34px}.nav-search-input{width:130px}.nav-search-input:focus{width:160px}.search-results{width:260px;right:-20px}}
+
 /* ===== RESPONSIVE ===== */
 @media(max-width:1280px){.side-panel{width:320px}.waterfall-gallery{columns:3}.notes-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:1024px){.main-content{flex-direction:column}.timeline-col{width:100%;padding-top:0}.timeline-track{position:static;flex-direction:row;flex-wrap:wrap;justify-content:center;gap:4px;padding-bottom:16px}.timeline-line{display:none}.timeline-year{width:auto;padding:6px 14px;font-size:0.75rem}.timeline-trip{max-width:none}.map-col{padding:0}.map-wrapper{position:static;height:400px;margin-bottom:20px}.side-panel{width:100%}.side-panel-header{position:static}.cards-list{max-height:none;flex-direction:row;flex-wrap:wrap}.dest-card{width:calc(50% - 6px)}.waterfall-gallery{columns:2}.notes-grid{grid-template-columns:1fr 1fr}.stats-row{gap:20px}.stat-number{font-size:2.2rem}}
@@ -388,9 +412,19 @@ function Toast({message,onDone}){
 // ============================================================
 // NAVBAR
 // ============================================================
-function Navbar({onAdd}){
+function Navbar({onAdd,data,onSearchSelect}){
   const[scrolled,setScrolled]=useState(false);
+  const[query,setQuery]=useState("");
+  const[results,setResults]=useState([]);
+  const[showResults,setShowResults]=useState(false);
+  const searchRef=useRef(null);
+
   useEffect(()=>{const h=()=>setScrolled(window.scrollY>20);window.addEventListener("scroll",h,{passive:true});return()=>window.removeEventListener("scroll",h)},[]);
+  useEffect(()=>{const h=e=>{if(searchRef.current&&!searchRef.current.contains(e.target))setShowResults(false)};document.addEventListener("mousedown",h);return()=>document.removeEventListener("mousedown",h)},[]);
+
+  const doSearch=v=>{setQuery(v);if(!v.trim()){setResults([]);setShowResults(false);return};const q=v.trim().toLowerCase();const r=data.filter(d=>d.province.toLowerCase().includes(q)||d.city.toLowerCase().includes(q)||d.placeName.toLowerCase().includes(q)).slice(0,6);setResults(r);setShowResults(r.length>0)};
+  const handleSelect=d=>{setShowResults(false);setQuery("");setResults([]);onSearchSelect(d)};
+
   const scrollTo=id=>{document.getElementById(id)?.scrollIntoView({behavior:"smooth"})};
   return(
     <nav className={`navbar${scrolled?" scrolled":""}`}>
@@ -400,6 +434,24 @@ function Navbar({onAdd}){
           <button onClick={()=>scrollTo("map-section")}>旅行地图</button>
           <button onClick={()=>scrollTo("gallery-section")}>影像集</button>
           <button onClick={()=>scrollTo("notes-section")}>游记</button>
+          <div className="nav-search-wrap" ref={searchRef}>
+            <span className="nav-search-icon">🔍</span>
+            <input className="nav-search-input" value={query} onChange={e=>doSearch(e.target.value)} onFocus={()=>results.length>0&&setShowResults(true)} onKeyDown={e=>{if(e.key==="Escape"){setShowResults(false);setQuery("")}}} placeholder="搜索目的地…"/>
+            {showResults&&(
+              <div className="search-results">
+                {results.map(d=>(
+                  <div key={d.id} className="search-result-item" onClick={()=>handleSelect(d)}>
+                    <img className="sr-thumb" src={d.thumbnail} alt="" onError={e=>{e.target.style.display="none"}}/>
+                    <div className="sr-info">
+                      <div className="sr-name">{d.placeName}</div>
+                      <div className="sr-meta">{d.province} · {d.city} · {formatDate(d.startDate)}</div>
+                    </div>
+                    <span className="sr-arrow">→</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <button className="nav-btn" onClick={onAdd}>+ 记录旅程</button>
         </div>
       </div>
@@ -897,6 +949,16 @@ function PickDestModal({data,onPick,onClose}){
 // ============================================================
 // APP
 // ============================================================
+// ============================================================
+// BACK TO TOP
+// ============================================================
+function BackToTop(){
+  const[visible,setVisible]=useState(false);
+  useEffect(()=>{const h=()=>setVisible(window.scrollY>400);window.addEventListener("scroll",h,{passive:true});return()=>window.removeEventListener("scroll",h)},[]);
+  const scrollTop=()=>{window.scrollTo({top:0,behavior:"smooth"})};
+  return <button className={`back-to-top${visible?" visible":""}`} onClick={scrollTop} title="回到顶部" aria-label="回到顶部">↑</button>;
+}
+
 function App(){
   const[travelData,setTravelData]=useLocalStorage("familyTravelData_v2",defaultTravelData);
   const[heroData,setHeroData]=useLocalStorage("familyHeroData_v2",{title:"我们的旅行足迹",subtitle:"每一段旅程，都是家的延伸"});
@@ -938,10 +1000,11 @@ function App(){
   const handlePickNoteDest=dest=>{setNoteDest(dest)};
   const handleAddCustomTag=t=>{if(!customTags.includes(t))setCustomTags(p=>[...p,t]);setToastMsg(`标签「${t}」已添加 ✓`)};
   const handleDeleteCustomTag=t=>{setCustomTags(p=>p.filter(x=>x!==t));setToastMsg(`标签「${t}」已删除 ✓`)};
+  const handleSearchSelect=d=>{setActiveId(d.id);setDetailDest(d);setSelectedYear(d.year);setTimeout(()=>{document.getElementById("map-section")?.scrollIntoView({behavior:"smooth"})},200)};
 
   return(
     <div>
-      <Navbar onAdd={handleAdd}/>
+      <Navbar onAdd={handleAdd} data={travelData} onSearchSelect={handleSearchSelect}/>
       <Hero heroData={heroData} onEditHero={()=>setShowHeroEdit(true)}/>
 
       <div className="main-content">
@@ -962,6 +1025,7 @@ function App(){
       {showGalleryMgr&&<GalleryManager data={travelData} onDeletePhoto={handleDeletePhoto} onAddPhotos={handleAddPhotos} onSetThumbnail={handleSetThumbnail} onClose={()=>setShowGalleryMgr(false)}/>}
       {showPickNote&&<PickDestModal data={travelData} onPick={handlePickNoteDest} onClose={()=>setShowPickNote(false)}/>}
       {toastMsg&&<Toast message={toastMsg} onDone={()=>setToastMsg(null)}/>}
+      <BackToTop/>
     </div>
   );
 }
