@@ -1099,8 +1099,9 @@ async function fetchWithTimeout(url,opts={},timeoutMs=15000){const controller=ne
 // query 格式代理：仅支持 GET（不转发 POST body），格式为 https://proxy/?url=...
 // POST 请求只用 path 格式代理，GET 请求优先 path 再试 query
 const BAIDU_PROXIES_PATH=[
-  {url:'https://travel-baidu-proxy.zhehao668-travel.workers.dev'},  // 主：Cloudflare Worker
-  {url:'https://proxy.cors.sh'},                                     // 备：cors.sh（支持POST）
+  {url:'https://travel-baidu-proxy.zhehao668-travel.workers.dev'},  // 主：Cloudflare Worker（国内需VPN）
+  // 国内用户：部署 vercel-proxy 后，将下面注释去掉并填入你的 Vercel 地址：
+  // {url:'https://你的项目名.vercel.app/api'},                        // 备：Vercel（国内通常可用）
 ];
 const BAIDU_PROXIES_QUERY=[
   {url:'https://corsproxy.io'},                                      // 仅GET可用
