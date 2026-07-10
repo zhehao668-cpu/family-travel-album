@@ -4,7 +4,8 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>家庭旅游相册 — 我们的旅行足迹</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"
+      onerror="this.onerror=null;this.href='https://cdn.bootcdn.net/ajax/libs/leaflet/1.9.4/leaflet.css'"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
@@ -395,11 +396,25 @@ body{font-family:var(--font-sans);background:var(--cream);color:var(--text-prima
 </head>
 <body>
 <div id="root"></div>
+<noscript><div style="text-align:center;padding:60px 20px;font-family:sans-serif;color:#8A7E6E">请启用 JavaScript 以查看此页面</div></noscript>
 
-<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script crossorigin src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"
+  onerror="this.onerror=null;this.src='https://cdn.bootcdn.net/ajax/libs/react/18.2.0/umd/react.production.min.js'"></script>
+<script crossorigin src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"
+  onerror="this.onerror=null;this.src='https://cdn.bootcdn.net/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js'"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7/babel.min.js"
+  onerror="this.onerror=null;this.src='https://cdn.bootcdn.net/ajax/libs/babel-standalone/7.22.20/babel.min.js'"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"
+  onerror="this.onerror=null;this.src='https://cdn.bootcdn.net/ajax/libs/leaflet/1.9.4/leaflet.js'"></script>
+
+<!-- CDN 加载检测：放在普通 script 中，确保即使 Babel 加载失败也能显示错误 -->
+<script>
+(function(){
+  if(typeof React==="undefined"||typeof ReactDOM==="undefined"){
+    document.getElementById("root").innerHTML='<div style="text-align:center;padding:80px 20px;font-family:sans-serif;background:#FFF8F0;min-height:100vh"><h2 style="color:#B8860B;font-size:1.5rem">⚠️ 资源加载失败</h2><p style="color:#8A7E6E;margin-top:16px;line-height:1.8">CDN 脚本未能加载，可能是网络限制。<br/>请尝试：开启 VPN 代理后刷新页面。<br/><br/><small style="font-size:0.85rem">💡 本地文件不受网络限制：<br/>用浏览器打开本地 index.html 即可正常使用</small></p></div>';
+  }
+})();
+</script>
 
 <script type="text/babel">
 /* ============================================================
