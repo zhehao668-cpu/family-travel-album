@@ -1091,6 +1091,8 @@ const BAIDU_SCOPE = 'basic,netdisk';
 function base64URL(v){return btoa(String.fromCharCode(...new Uint8Array(v))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'')}
 function generateVerifier(){const a=new Uint8Array(48);crypto.getRandomValues(a);return base64URL(a)}
 async function generateChallenge(verifier){const e=new TextEncoder();const d=await crypto.subtle.digest('SHA-256',e.encode(verifier));return base64URL(d)}
+// 带超时的 fetch，避免请求卡死无提示
+async function fetchWithTimeout(url,opts={},timeoutMs=15000){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),timeoutMs);try{const r=await fetch(url,{...opts,signal:controller.signal});return r}finally{clearTimeout(timer)}}
 
 // --- useBaiduCloud Hook: 管理百度网盘 OAuth token + 数据上传/下载 ---
 function useBaiduCloud(){
@@ -1112,19 +1114,30 @@ function useBaiduCloud(){
     const verifier=sessionStorage.getItem('baidu_verifier');if(!verifier){setAuthError('缺少 code_verifier');return}
     (async()=>{try{
       const body=new URLSearchParams({grant_type:'authorization_code',code,client_id:BAIDU_APP_KEY,redirect_uri:BAIDU_REDIRECT_URI,code_verifier:verifier});
-      const r=await fetch(`${PROXY_URL}/openapi.baidu.com/oauth/2.0/token`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body.toString()});
+      let r;try{r=await fetch(`${PROXY_URL}/openapi.baidu.com/oauth/2.0/token`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body.toString()})}
+      catch(e){setAuthError('代理服务器不可达：'+PROXY_URL.split('//')[1].split('/')[0]);console.error('Proxy unreachable:',e);sessionStorage.removeItem('baidu_state');sessionStorage.removeItem('baidu_verifier');window.history.replaceState({},'',window.location.pathname);return}
       const d=await r.json();
       console.log('Baidu token response:',d);
       if(d.access_token){setToken(d);sessionStorage.setItem('baidu_token',JSON.stringify(d));setAuthError(null);
-        const ur=await fetch(`${PROXY_URL}/pan.baidu.com/rest/2.0/xpan/nas?method=uinfo&access_token=${d.access_token}`);
-        const ud=await ur.json();console.log('Baidu user info:',ud);if(ud.errno===0){setUser(ud);sessionStorage.setItem('baidu_user',JSON.stringify(ud))}
-      }else{setAuthError(d.error_description||d.error||'换取token失败')}
+        try{const ur=await fetch(`${PROXY_URL}/pan.baidu.com/rest/2.0/xpan/nas?method=uinfo&access_token=${d.access_token}`);const ud=await ur.json();console.log('Baidu user info:',ud);if(ud.errno===0){setUser(ud);sessionStorage.setItem('baidu_user',JSON.stringify(ud))}}
+        catch(e){console.error('User info fetch failed:',e)}
+      }else{setAuthError(d.error_description||d.error||'百度授权失败')}
       sessionStorage.removeItem('baidu_state');sessionStorage.removeItem('baidu_verifier');
       window.history.replaceState({},'',window.location.pathname);
-    }catch(e){console.error('Baidu auth error:',e);setAuthError('网络错误：'+e.message)}})()
+    }catch(e){console.error('Baidu auth error:',e);setAuthError('授权处理异常：'+e.message);sessionStorage.removeItem('baidu_state');sessionStorage.removeItem('baidu_verifier');window.history.replaceState({},'',window.location.pathname)}})()
   },[]);
 
-  const login=async()=>{setAuthError(null);const verifier=generateVerifier();const challenge=await generateChallenge(verifier);const state=base64URL(crypto.getRandomValues(new Uint8Array(16)));sessionStorage.setItem('baidu_verifier',verifier);sessionStorage.setItem('baidu_state',state);const authUrl=`https://openapi.baidu.com/oauth/2.0/authorize?response_type=code&client_id=${BAIDU_APP_KEY}&redirect_uri=${encodeURIComponent(BAIDU_REDIRECT_URI)}&scope=${BAIDU_SCOPE}&code_challenge=${challenge}&code_challenge_method=S256&state=${state}&display=page`;window.location.href=authUrl};
+  const login=async()=>{setAuthError(null);
+    try{
+      const verifier=generateVerifier();
+      let challenge;
+      try{challenge=await generateChallenge(verifier)}
+      catch(e){setAuthError('加密API不可用（需HTTPS环境）；请检查是否在安全上下文中打开');console.error('PKCE challenge failed:',e);return}
+      const state=base64URL(crypto.getRandomValues(new Uint8Array(16)));
+      sessionStorage.setItem('baidu_verifier',verifier);sessionStorage.setItem('baidu_state',state);
+      const authUrl=`https://openapi.baidu.com/oauth/2.0/authorize?response_type=code&client_id=${BAIDU_APP_KEY}&redirect_uri=${encodeURIComponent(BAIDU_REDIRECT_URI)}&scope=${BAIDU_SCOPE}&code_challenge=${challenge}&code_challenge_method=S256&state=${state}&display=page`;
+      window.location.href=authUrl;
+    }catch(e){setAuthError('登录初始化失败：'+e.message);console.error('Baidu login error:',e)}};
 
   const logout=()=>{setToken(null);setUser(null);sessionStorage.removeItem('baidu_token');sessionStorage.removeItem('baidu_user');setAuthError(null)};
 
@@ -1173,10 +1186,13 @@ function BaiduPanel({token,user,login,logout,syncing,onToast,authError,onSyncNow
   const connected=!!token;
   return(
     <div className="baidu-panel" style={{position:'relative'}}>
-      <button className={`baidu-btn${connected?' connected':''}`} onClick={()=>connected?setShowMenu(s=>!s):login()} title={connected?'百度网盘已连接':authError?`错误: ${authError}`:'连接百度网盘'}>
+      <button className={`baidu-btn${connected?' connected':''}`} onClick={()=>connected?setShowMenu(s=>!s):login()} title={connected?'已连接云端备份':authError?authError:'点击连接百度网盘进行云端备份'}>
         <span className={`baidu-status${connected?' on':''}`} style={authError?{background:'#d4756b'}:{}}></span>
         {syncing?`☁️ 同步中…`:connected?`☁️ ${user?.baidu_name||'已连接'}`:authError?`☁️ 连接失败 (点击重试)`:'☁️ 连接网盘'}
       </button>
+      {authError&&!connected&&(
+        <span style={{fontSize:"0.6rem",color:"#d4756b",maxWidth:"200px",wordBreak:"break-all",display:"inline-block",lineHeight:1.3}} title={authError}>{(authError||'').length>40?(authError||'').slice(0,40)+'…':authError}</span>
+      )}
       {connected&&(
         <div className={`cloud-actions${showMenu?' show':''}`}>
           <button onClick={()=>{onSyncNow();setShowMenu(false)}}>🔄 立即同步数据</button>
