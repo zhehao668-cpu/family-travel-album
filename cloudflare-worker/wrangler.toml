@@ -1,0 +1,7 @@
+# Family Travel Album — Baidu API CORS Proxy
+name = "travel-baidu-proxy"
+main = "src/index.js"
+compatibility_date = "2026-07-10"
+
+# Free tier: 100,000 requests/day, plenty for personal use
+workers_dev = true
