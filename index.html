@@ -311,6 +311,37 @@ body{font-family:var(--font-sans);background:var(--cream);color:var(--text-prima
 .pick-dest-item:hover{background:rgba(212,168,83,0.05);border-color:rgba(212,168,83,0.15)}
 .pick-dest-item .pick-name{font-family:var(--font-serif);font-size:0.82rem;color:var(--text-primary)}
 .pick-dest-item .pick-meta{font-size:0.65rem;color:var(--text-muted)}
+
+/* ===== TAG INPUT ===== */
+.tag-input-wrap{display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px;border:1.5px solid var(--cream-darker);border-radius:var(--radius-sm);background:var(--cream);min-height:42px;align-items:center;transition:var(--transition);cursor:text}
+.tag-input-wrap:focus-within{border-color:var(--gold);box-shadow:0 0 0 3px rgba(212,168,83,0.08)}
+.tag-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:12px;background:var(--gold-pale);color:var(--gold-dark);font-size:0.7rem;font-weight:500;letter-spacing:0.02em;white-space:nowrap}
+.tag-chip .tag-chip-x{cursor:pointer;font-size:0.65rem;opacity:0.6;transition:var(--transition);line-height:1;padding:0 2px}
+.tag-chip .tag-chip-x:hover{opacity:1;color:#d4756b}
+.tag-input-field{border:none;outline:none;background:transparent;font-family:var(--font-sans);font-size:0.76rem;color:var(--text-primary);flex:1;min-width:80px;padding:2px 4px}
+.tag-input-field::placeholder{color:var(--text-muted)}
+.tag-suggest-dropdown{position:absolute;top:100%;left:0;right:0;background:var(--white);border:1px solid var(--cream-darker);border-radius:var(--radius-sm);box-shadow:var(--shadow-lg);z-index:100;max-height:140px;overflow-y:auto}
+.tag-suggest-item{padding:8px 14px;font-size:0.73rem;cursor:pointer;transition:var(--transition);color:var(--text-secondary)}
+.tag-suggest-item:hover{background:rgba(212,168,83,0.08);color:var(--gold-dark)}
+.tag-suggest-item.active{background:rgba(212,168,83,0.12);color:var(--gold-dark)}
+.tag-manage-row{display:flex;gap:6px;align-items:center;margin-top:4px}
+.tag-manage-row input{padding:4px 10px;border:1px solid var(--cream-darker);border-radius:12px;font-size:0.68rem;font-family:var(--font-sans);flex:1;background:var(--cream);transition:var(--transition)}
+.tag-manage-row input:focus{outline:none;border-color:var(--gold)}
+.tag-manage-row button{padding:3px 12px;border-radius:12px;border:1px solid var(--gold);background:transparent;color:var(--gold-dark);font-size:0.65rem;cursor:pointer;font-family:var(--font-sans);transition:var(--transition);white-space:nowrap}
+.tag-manage-row button:hover{background:var(--gold);color:#fff}
+
+/* ===== PHOTO UPLOAD ===== */
+.upload-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:16px;border:1.5px dashed rgba(212,168,83,0.4);background:transparent;color:var(--gold-dark);font-family:var(--font-sans);font-size:0.7rem;cursor:pointer;transition:var(--transition);letter-spacing:0.02em}
+.upload-btn:hover{border-color:var(--gold);background:rgba(212,168,83,0.05)}
+.upload-btn input[type=file]{display:none}
+.photo-previews{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin-top:8px}
+.photo-preview-item{position:relative;border-radius:var(--radius-sm);overflow:hidden;aspect-ratio:4/3;background:var(--cream-dark);border:1px solid var(--cream-darker)}
+.photo-preview-item img{width:100%;height:100%;object-fit:cover}
+.photo-preview-item .preview-del{position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.5);color:#fff;border:none;cursor:pointer;font-size:0.55rem;display:flex;align-items:center;justify-content:center;transition:var(--transition);opacity:0}
+.photo-preview-item:hover .preview-del{opacity:1}
+.photo-preview-item .preview-del:hover{background:rgba(212,90,80,0.9)}
+.photo-preview-item .preview-label{position:absolute;bottom:2px;left:2px;font-size:0.5rem;background:rgba(0,0,0,0.5);color:#fff;padding:1px 5px;border-radius:4px}
+.photo-upload-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}
 </style>
 </head>
 <body>
@@ -485,18 +516,31 @@ function DestinationCard({dest,isActive,onClick,onDetail}){
 // ============================================================
 // SIDE PANEL
 // ============================================================
-function SidePanel({data,activeId,onSelect,onDetail,onAdd,onExport}){
+function SidePanel({data,activeId,onSelect,onDetail,onAdd,onExport,customTags,onAddCustomTag,onDeleteCustomTag}){
   const[activeTags,setActiveTags]=useState([]);
-  const allTags=useMemo(()=>{const s=new Set();data.forEach(d=>d.tags.forEach(t=>s.add(t)));return[...s].sort()},[data]);
+  const[newTag,setNewTag]=useState("");
+  const[showAddTag,setShowAddTag]=useState(false);
+  const allTags=useMemo(()=>{const s=new Set([...customTags]);data.forEach(d=>d.tags.forEach(t=>s.add(t)));return[...s].sort()},[data,customTags]);
   const filtered=useMemo(()=>activeTags.length===0?data:data.filter(d=>d.tags.some(t=>activeTags.includes(t))),[data,activeTags]);
+
+  const handleAddTag=()=>{const t=newTag.trim();if(!t||allTags.includes(t)){setNewTag("");setShowAddTag(false);return};onAddCustomTag(t);setNewTag("");setShowAddTag(false)};
+
   return(
     <div className="side-panel">
       <div className="side-panel-header">
         <div className="side-panel-title">旅行目的地</div>
         <div className="tag-filters">
-          {allTags.map(t=><button key={t} className={`tag-pill${activeTags.includes(t)?" active":""}`} onClick={()=>setActiveTags(p=>p.includes(t)?p.filter(x=>x!==t):[...p,t])}>{t}</button>)}
+          {allTags.map(t=><button key={t} className={`tag-pill${activeTags.includes(t)?" active":""}`} onClick={()=>setActiveTags(p=>p.includes(t)?p.filter(x=>x!==t):[...p,t])}>{t}{customTags.includes(t)&&!data.some(d=>d.tags.includes(t))?<span style={{marginLeft:3,fontSize:"0.55rem",opacity:0.5}} title="自定义标签">*</span>:""}</button>)}
           {activeTags.length>0&&<button className="tag-pill" style={{borderStyle:"solid",color:"var(--text-muted)"}} onClick={()=>setActiveTags([])}>✕ 清除</button>}
+          {!showAddTag&&<button className="tag-pill" style={{borderStyle:"dashed",fontSize:"0.75rem"}} onClick={()=>setShowAddTag(true)} title="添加自定义标签">+</button>}
         </div>
+        {showAddTag&&(
+          <div className="tag-manage-row" style={{marginBottom:6}}>
+            <input value={newTag} onChange={e=>setNewTag(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")handleAddTag();if(e.key==="Escape"){setShowAddTag(false);setNewTag("")}}} placeholder="新标签名称…" autoFocus/>
+            <button onClick={handleAddTag}>添加</button>
+            <button style={{borderColor:"var(--cream-darker)",color:"var(--text-muted)"}} onClick={()=>{setShowAddTag(false);setNewTag("")}}>取消</button>
+          </div>
+        )}
         <div className="side-panel-actions">
           <button className="btn-add" onClick={onAdd}>+ 新增目的地</button>
           <button className="btn-export" onClick={onExport} title="导出 JSON 备份">⬇ 导出</button>
@@ -558,21 +602,60 @@ function DetailModal({dest,onClose,onEdit,onDelete}){
 }
 
 // ============================================================
+// TAG INPUT COMPONENT
+// ============================================================
+function TagInput({tags,allTags,onChange,placeholder}){
+  const[input,setInput]=useState("");
+  const[showSuggest,setShowSuggest]=useState(false);
+  const[suggestIdx,setSuggestIdx]=useState(0);
+  const wrapRef=useRef(null);
+  const suggests=useMemo(()=>{if(!input.trim())return[];const q=input.trim().toLowerCase();return allTags.filter(t=>t.toLowerCase().includes(q)&&!tags.includes(t)).slice(0,6)},[input,allTags,tags]);
+
+  const addTag=t=>{const tag=t||input.trim();if(!tag||tags.includes(tag)){setInput("");setShowSuggest(false);return};onChange([...tags,tag]);setInput("");setShowSuggest(false);setSuggestIdx(0)};
+  const removeTag=t=>onChange(tags.filter(x=>x!==t));
+  const handleKey=e=>{if(e.key==="Enter"||e.key===","){e.preventDefault();if(showSuggest&&suggests.length>0)addTag(suggests[suggestIdx]);else addTag()}else if(e.key==="Backspace"&&!input&&tags.length>0)removeTag(tags[tags.length-1]);else if(e.key==="ArrowDown"){e.preventDefault();setSuggestIdx(i=>Math.min(i+1,suggests.length-1));setShowSuggest(true)}else if(e.key==="ArrowUp"){e.preventDefault();setSuggestIdx(i=>Math.max(i-1,0))}else if(e.key==="Escape")setShowSuggest(false)};
+
+  useEffect(()=>{if(input.trim())setShowSuggest(true);else setShowSuggest(false);setSuggestIdx(0)},[input]);
+
+  return(
+    <div style={{position:"relative"}}>
+      <div className="tag-input-wrap" ref={wrapRef} onClick={()=>wrapRef.current?.querySelector("input")?.focus()}>
+        {tags.map(t=><span key={t} className="tag-chip">{t}<span className="tag-chip-x" onClick={e=>{e.stopPropagation();removeTag(t)}}>✕</span></span>)}
+        <input className="tag-input-field" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={handleKey} onFocus={()=>input.trim()&&setShowSuggest(true)} onBlur={()=>setTimeout(()=>setShowSuggest(false),150)} placeholder={tags.length===0?placeholder||"输入标签，按回车添加…":""}/>
+      </div>
+      {showSuggest&&suggests.length>0&&(
+        <div className="tag-suggest-dropdown">
+          {suggests.map((t,i)=><div key={t} className={`tag-suggest-item${i===suggestIdx?" active":""}`} onMouseDown={e=>{e.preventDefault();addTag(t)}} onMouseEnter={()=>setSuggestIdx(i)}>{t}</div>)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
 // ADD/EDIT MODAL
 // ============================================================
-function AddEditModal({dest,onSave,onClose}){
+function AddEditModal({dest,onSave,onClose,allTags}){
   const isEdit=!!dest;
-  const[form,setForm]=useState(dest||{province:"",city:"",placeName:"",startDate:"",endDate:"",year:new Date().getFullYear(),season:"春",companions:"全家",days:1,transport:"",cost:0,food:[],tags:[],coordinates:[30,110],thumbnail:"",images:[""],note:"",externalLink:""});
+  const[form,setForm]=useState(dest||{province:"",city:"",placeName:"",startDate:"",endDate:"",year:new Date().getFullYear(),season:"春",companions:"全家",days:1,transport:"",cost:0,food:[],tags:[],coordinates:[30,110],thumbnail:"",images:[],note:"",externalLink:""});
   const[foodStr,setFoodStr]=useState((dest?.food||[]).join("、"));
-  const[tagsStr,setTagsStr]=useState((dest?.tags||[]).join("、"));
-  const[imagesStr,setImagesStr]=useState((dest?.images||[""]).join("\n"));
+  const[tags,setTags]=useState(dest?.tags||[]);
+  const[imagesStr,setImagesStr]=useState((dest?.images||[]).join("\n"));
+  const[uploadedThumb,setUploadedThumb]=useState(null);
+  const[uploadedImages,setUploadedImages]=useState([]);
 
-  const save=()=>{const d={...form,id:dest?.id||String(Date.now()),food:foodStr.split(/[、,，]/).map(s=>s.trim()).filter(Boolean),tags:tagsStr.split(/[、,，]/).map(s=>s.trim()).filter(Boolean),images:imagesStr.split("\n").map(s=>s.trim()).filter(Boolean),days:Number(form.days)||1,cost:Number(form.cost)||0,year:Number(form.year)||new Date().getFullYear(),coordinates:[Number(form.coordinates[0]),Number(form.coordinates[1])]};if(!d.thumbnail&&d.images.length>0)d.thumbnail=d.images[0];onSave(d)};
   const u=(f,v)=>setForm(p=>({...p,[f]:v}));
+
+  const handleFileUpload=(files,type)=>{if(!files||files.length===0)return;const readers=[];Array.from(files).forEach(file=>{const r=new FileReader();readers.push(new Promise(res=>{r.onload=e=>res(e.target.result);r.readAsDataURL(file)}))});Promise.all(readers).then(results=>{if(type==="thumb"){u("thumbnail",results[0]);setUploadedThumb(results[0])}else{setUploadedImages(p=>[...p,...results.filter(Boolean)])}}).catch(()=>{})};
+
+  const clearUploadedThumb=()=>{setUploadedThumb(null);u("thumbnail","")};
+  const clearUploadedImg=i=>{setUploadedImages(p=>p.filter((_,idx)=>idx!==i))};
+
+  const save=()=>{const imgList=[...uploadedImages,...imagesStr.split("\n").map(s=>s.trim()).filter(Boolean)].filter(Boolean);const d={...form,id:dest?.id||String(Date.now()),food:foodStr.split(/[、,，]/).map(s=>s.trim()).filter(Boolean),tags,images:imgList,days:Number(form.days)||1,cost:Number(form.cost)||0,year:Number(form.year)||new Date().getFullYear(),coordinates:[Number(form.coordinates[0]),Number(form.coordinates[1])]};if(!d.thumbnail&&d.images.length>0)d.thumbnail=d.images[0];if(uploadedThumb)d.thumbnail=uploadedThumb;onSave(d)};
 
   return(
     <div className="modal-overlay" onClick={onClose}>
-      <div className="detail-modal" onClick={e=>e.stopPropagation()} style={{maxWidth:560}}>
+      <div className="detail-modal" onClick={e=>e.stopPropagation()} style={{maxWidth:580}}>
         <div className="detail-body">
           <h3 style={{fontFamily:"var(--font-serif)",marginBottom:16,fontSize:"1.15rem"}}>{isEdit?"编辑旅行记录":"新增旅行记录"}</h3>
           <div className="form-row"><div className="form-group"><label>省份</label><input value={form.province} onChange={e=>u("province",e.target.value)} placeholder="如：云南"/></div><div className="form-group"><label>城市</label><input value={form.city} onChange={e=>u("city",e.target.value)} placeholder="如：大理"/></div></div>
@@ -582,9 +665,23 @@ function AddEditModal({dest,onSave,onClose}){
           <div className="form-row"><div className="form-group"><label>季节</label><select value={form.season} onChange={e=>u("season",e.target.value)}><option>春</option><option>夏</option><option>秋</option><option>冬</option></select></div><div className="form-group"><label>交通</label><input value={form.transport} onChange={e=>u("transport",e.target.value)} placeholder="如：高铁"/></div></div>
           <div className="form-row"><div className="form-group"><label>费用（元）</label><input type="number" value={form.cost} onChange={e=>u("cost",e.target.value)} min="0"/></div><div className="form-group"><label>纬度,经度</label><input value={form.coordinates.join(",")} onChange={e=>{const p=e.target.value.split(",");if(p.length===2)u("coordinates",[p[0].trim(),p[1].trim()])}} placeholder="25.6,100.2"/></div></div>
           <div className="form-group"><label>美食（顿号分隔）</label><input value={foodStr} onChange={e=>setFoodStr(e.target.value)} placeholder="过桥米线、乳扇"/></div>
-          <div className="form-group"><label>标签（顿号分隔）</label><input value={tagsStr} onChange={e=>setTagsStr(e.target.value)} placeholder="亲子游、长途"/></div>
-          <div className="form-group"><label>缩略图 URL</label><input value={form.thumbnail} onChange={e=>u("thumbnail",e.target.value)} placeholder="https://..."/></div>
-          <div className="form-group"><label>更多图片 URLs（每行一个）</label><textarea value={imagesStr} onChange={e=>setImagesStr(e.target.value)} placeholder="https://..." rows={3}/></div>
+          <div className="form-group"><label>旅行标签</label><TagInput tags={tags} allTags={allTags} onChange={setTags} placeholder="输入标签，回车添加…"/></div>
+          <div className="form-group">
+            <label>缩略图</label>
+            <input value={form.thumbnail} onChange={e=>u("thumbnail",e.target.value)} placeholder="https://... 或上传本地图片"/>
+            <div className="photo-upload-row">
+              <label className="upload-btn" style={{marginTop:4}}>📁 本地上传<input type="file" accept="image/*" onChange={e=>{handleFileUpload(e.target.files,"thumb");e.target.value=""}}/></label>
+            </div>
+            {uploadedThumb&&<div className="photo-previews"><div className="photo-preview-item"><img src={uploadedThumb} alt=""/><span className="preview-label">封面</span><button className="preview-del" onClick={clearUploadedThumb}>✕</button></div></div>}
+          </div>
+          <div className="form-group">
+            <label>更多图片 URLs（每行一个）</label>
+            <textarea value={imagesStr} onChange={e=>setImagesStr(e.target.value)} placeholder="https://..." rows={3}/>
+            <div className="photo-upload-row">
+              <label className="upload-btn" style={{marginTop:4}}>📁 批量上传<input type="file" accept="image/*" multiple onChange={e=>{handleFileUpload(e.target.files,"images");e.target.value=""}}/></label>
+            </div>
+            {uploadedImages.length>0&&<div className="photo-previews">{uploadedImages.map((url,i)=><div key={i} className="photo-preview-item"><img src={url} alt=""/><button className="preview-del" onClick={()=>clearUploadedImg(i)}>✕</button></div>)}</div>}
+          </div>
           <div className="form-group"><label>游记/备注</label><textarea value={form.note} onChange={e=>u("note",e.target.value)} placeholder="记录旅途回忆..." rows={3}/></div>
           <div className="form-actions"><button className="detail-btn ghost" onClick={onClose}>取消</button><button className="detail-btn primary" onClick={save}>{isEdit?"保存修改":"添加记录"}</button></div>
         </div>
@@ -723,8 +820,10 @@ function ImageViewer({images,startIndex,onClose}){
 // ============================================================
 function GalleryManager({data,onDeletePhoto,onAddPhotos,onSetThumbnail,onClose}){
   const[addUrls,setAddUrls]=useState({});
+  const[uploadPreviews,setUploadPreviews]=useState({});
   const setUrl=(destId,v)=>setAddUrls(p=>({...p,[destId]:v}));
   const handleAdd=(destId)=>{const urls=addUrls[destId];if(!urls||!urls.trim())return;const list=urls.split("\n").map(s=>s.trim()).filter(Boolean);if(list.length===0)return;onAddPhotos(destId,list);setUrl(destId,"")};
+  const handleFileUpload=(destId,files)=>{if(!files||files.length===0)return;const readers=[];Array.from(files).forEach(file=>{const r=new FileReader();readers.push(new Promise(res=>{r.onload=e=>res(e.target.result);r.readAsDataURL(file)}))});Promise.all(readers).then(results=>{onAddPhotos(destId,results.filter(Boolean))}).catch(()=>{})};
   useEffect(()=>{const k=e=>{if(e.key==="Escape")onClose()};window.addEventListener("keydown",k);return()=>window.removeEventListener("keydown",k)},[onClose]);
 
   return(
@@ -757,6 +856,9 @@ function GalleryManager({data,onDeletePhoto,onAddPhotos,onSetThumbnail,onClose})
               <div className="gm-add-row">
                 <input value={addUrls[dest.id]||""} onChange={e=>setUrl(dest.id,e.target.value)} placeholder={`为「${dest.placeName}」添加照片URL（每行一个）…`}/>
                 <button onClick={()=>handleAdd(dest.id)}>添加</button>
+              </div>
+              <div className="gm-add-row" style={{paddingTop:0}}>
+                <label className="upload-btn" style={{fontSize:"0.65rem",padding:"5px 12px"}}>📁 本地上传<input type="file" accept="image/*" multiple onChange={e=>{handleFileUpload(dest.id,e.target.files);e.target.value=""}}/></label>
               </div>
             </div>
           );
@@ -798,6 +900,7 @@ function PickDestModal({data,onPick,onClose}){
 function App(){
   const[travelData,setTravelData]=useLocalStorage("familyTravelData_v2",defaultTravelData);
   const[heroData,setHeroData]=useLocalStorage("familyHeroData_v2",{title:"我们的旅行足迹",subtitle:"每一段旅程，都是家的延伸"});
+  const[customTags,setCustomTags]=useLocalStorage("familyCustomTags_v2",[]);
   const[activeId,setActiveId]=useState(null);
   const[selectedYear,setSelectedYear]=useState(null);
   const[showAddEdit,setShowAddEdit]=useState(false);
@@ -809,6 +912,8 @@ function App(){
   const[toastMsg,setToastMsg]=useState(null);
   const[showGalleryMgr,setShowGalleryMgr]=useState(false);
   const[showPickNote,setShowPickNote]=useState(false);
+
+  const allTags=useMemo(()=>{const s=new Set(customTags);travelData.forEach(d=>d.tags.forEach(t=>s.add(t)));return[...s].sort()},[travelData,customTags]);
 
   const filteredMapIds=useMemo(()=>{if(!selectedYear)return null;const ids=new Set(travelData.filter(d=>d.year===selectedYear).map(d=>d.id));return ids.size>0?ids:null},[travelData,selectedYear]);
 
@@ -831,6 +936,8 @@ function App(){
   const handleAddPhotos=(destId,urls)=>{setTravelData(p=>p.map(d=>{if(d.id!==destId)return d;const imgs=[...d.images||[],...urls];if(!d.thumbnail)return{...d,thumbnail:urls[0],images:imgs.slice(1)};return{...d,images:imgs}}));setToastMsg(`已添加 ${urls.length} 张照片 ✓`)};
   const handleSetThumbnail=(destId,url)=>{setTravelData(p=>p.map(d=>{if(d.id!==destId)return d;const all=[d.thumbnail,...(d.images||[])].filter(u=>u!==url);return{...d,thumbnail:url,images:all}}));setToastMsg("封面已更新 ✓")};
   const handlePickNoteDest=dest=>{setNoteDest(dest)};
+  const handleAddCustomTag=t=>{if(!customTags.includes(t))setCustomTags(p=>[...p,t]);setToastMsg(`标签「${t}」已添加 ✓`)};
+  const handleDeleteCustomTag=t=>{setCustomTags(p=>p.filter(x=>x!==t));setToastMsg(`标签「${t}」已删除 ✓`)};
 
   return(
     <div>
@@ -840,7 +947,7 @@ function App(){
       <div className="main-content">
         <Timeline data={travelData} selectedYear={selectedYear} onYearClick={handleYearClick} onTripClick={handleTripClick}/>
         <MapView data={travelData} activeId={activeId} filteredIds={filteredMapIds} onMarkerClick={handleMarkerClick} onAdd={handleAdd} onManage={()=>{document.querySelector(".side-panel")?.scrollIntoView({behavior:"smooth",block:"start"})}}/>
-        <SidePanel data={travelData} activeId={activeId} onSelect={handleSelectCard} onDetail={handleDetail} onAdd={handleAdd} onExport={handleExport}/>
+        <SidePanel data={travelData} activeId={activeId} onSelect={handleSelectCard} onDetail={handleDetail} onAdd={handleAdd} onExport={handleExport} customTags={customTags} onAddCustomTag={handleAddCustomTag} onDeleteCustomTag={handleDeleteCustomTag}/>
       </div>
 
       <SummaryBar data={travelData} onPhotoClick={handlePhotoClick} onNoteExpand={dest=>setNoteDest(dest)} onNoteEdit={handleEdit} onNoteDelete={handleNoteDelete} onManageGallery={()=>setShowGalleryMgr(true)} onAddNote={()=>setShowPickNote(true)}/>
@@ -850,7 +957,7 @@ function App(){
       {showHeroEdit&&<HeroEditModal heroData={heroData} onSave={d=>{setHeroData(d);setShowHeroEdit(false);setToastMsg("标题已更新 ✓")}} onClose={()=>setShowHeroEdit(false)}/>}
       {detailDest&&<DetailModal dest={detailDest} onClose={()=>setDetailDest(null)} onEdit={handleEdit} onDelete={handleDelete}/>}
       {noteDest&&<NoteDetailModal dest={noteDest} onSave={handleNoteSave} onClose={()=>setNoteDest(null)}/>}
-      {showAddEdit&&<AddEditModal dest={editingDest} onSave={handleSave} onClose={()=>{setShowAddEdit(false);setEditingDest(null)}}/>}
+      {showAddEdit&&<AddEditModal dest={editingDest} onSave={handleSave} onClose={()=>{setShowAddEdit(false);setEditingDest(null)}} allTags={allTags}/>}
       {viewer&&<ImageViewer images={viewer.images} startIndex={viewer.startIndex} onClose={()=>setViewer(null)}/>}
       {showGalleryMgr&&<GalleryManager data={travelData} onDeletePhoto={handleDeletePhoto} onAddPhotos={handleAddPhotos} onSetThumbnail={handleSetThumbnail} onClose={()=>setShowGalleryMgr(false)}/>}
       {showPickNote&&<PickDestModal data={travelData} onPick={handlePickNoteDest} onClose={()=>setShowPickNote(false)}/>}
