@@ -1093,6 +1093,35 @@ function generateVerifier(){const a=new Uint8Array(48);crypto.getRandomValues(a)
 async function generateChallenge(verifier){const e=new TextEncoder();const d=await crypto.subtle.digest('SHA-256',e.encode(verifier));return base64URL(d)}
 // 带超时的 fetch，避免请求卡死无提示
 async function fetchWithTimeout(url,opts={},timeoutMs=15000){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),timeoutMs);try{const r=await fetch(url,{...opts,signal:controller.signal});return r}finally{clearTimeout(timer)}}
+// 百度API代理：主代理不通时自动切换备用代理
+// workers.dev 在国内可能被墙，corsproxy.io 作为备用
+const BAIDU_PROXIES=[
+  {url:'https://travel-baidu-proxy.zhehao668-travel.workers.dev', fmt:'path'},       // 主：Cloudflare Worker（国外可用）
+  {url:'https://corsproxy.io', fmt:'query'},                                           // 备1：公共CORS代理
+  {url:'https://api.allorigins.win/raw', fmt:'query'},                                  // 备2：AllOrigins
+];
+async function baiduProxyFetch(apiHost,apiPath,opts={},timeoutMs=8000){
+  let lastErr=null;
+  for(const proxy of BAIDU_PROXIES){
+    try{
+      let targetUrl;
+      if(proxy.fmt==='path'){
+        // 格式: https://proxy/pan.baidu.com/rest/2.0/...
+        const base=proxy.url.replace(/\/$/,'');
+        const fullPath='/'+apiHost+apiPath;
+        targetUrl=base+fullPath;
+      }else{
+        // 格式: https://proxy/?url=https://pan.baidu.com/rest/2.0/...
+        const baiduUrl=encodeURIComponent(`https://${apiHost}${apiPath}`);
+        targetUrl=`${proxy.url}?url=${baiduUrl}`;
+      }
+      const r=await fetchWithTimeout(targetUrl,opts,timeoutMs);
+      if(r.ok||r.status<500)return r;
+      lastErr=new Error(`HTTP ${r.status}`);
+    }catch(e){lastErr=e}
+  }
+  throw lastErr||new Error('所有代理均不可用');
+}
 
 // --- useBaiduCloud Hook: 管理百度网盘 OAuth token + 数据上传/下载 ---
 function useBaiduCloud(){
@@ -1114,12 +1143,12 @@ function useBaiduCloud(){
     const verifier=sessionStorage.getItem('baidu_verifier');if(!verifier){setAuthError('缺少 code_verifier');return}
     (async()=>{try{
       const body=new URLSearchParams({grant_type:'authorization_code',code,client_id:BAIDU_APP_KEY,redirect_uri:BAIDU_REDIRECT_URI,code_verifier:verifier});
-      let r;try{r=await fetch(`${PROXY_URL}/openapi.baidu.com/oauth/2.0/token`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body.toString()})}
+      let r;try{r=await baiduProxyFetch('openapi.baidu.com','/oauth/2.0/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body.toString()})}
       catch(e){setAuthError('代理服务器不可达：'+PROXY_URL.split('//')[1].split('/')[0]);console.error('Proxy unreachable:',e);sessionStorage.removeItem('baidu_state');sessionStorage.removeItem('baidu_verifier');window.history.replaceState({},'',window.location.pathname);return}
       const d=await r.json();
       console.log('Baidu token response:',d);
       if(d.access_token){setToken(d);sessionStorage.setItem('baidu_token',JSON.stringify(d));setAuthError(null);
-        try{const ur=await fetch(`${PROXY_URL}/pan.baidu.com/rest/2.0/xpan/nas?method=uinfo&access_token=${d.access_token}`);const ud=await ur.json();console.log('Baidu user info:',ud);if(ud.errno===0){setUser(ud);sessionStorage.setItem('baidu_user',JSON.stringify(ud))}}
+        try{const ur=await baiduProxyFetch('pan.baidu.com',`/rest/2.0/xpan/nas?method=uinfo&access_token=${d.access_token}`);const ud=await ur.json();console.log('Baidu user info:',ud);if(ud.errno===0){setUser(ud);sessionStorage.setItem('baidu_user',JSON.stringify(ud))}}
         catch(e){console.error('User info fetch failed:',e)}
       }else{setAuthError(d.error_description||d.error||'百度授权失败')}
       sessionStorage.removeItem('baidu_state');sessionStorage.removeItem('baidu_verifier');
@@ -1141,7 +1170,7 @@ function useBaiduCloud(){
 
   const logout=()=>{setToken(null);setUser(null);sessionStorage.removeItem('baidu_token');sessionStorage.removeItem('baidu_user');setAuthError(null)};
 
-  const apiCall=async(path,method,body)=>{const h={'Content-Type':'application/x-www-form-urlencoded'};const url=`${PROXY_URL}/${path}${path.includes('?')?'&':'?'}access_token=${token.access_token}`;const opts={method,headers:h};if(body)opts.body=body instanceof URLSearchParams?body.toString():body;const r=await fetch(url,opts);return r.json()};
+  const apiCall=async(path,method,body)=>{const idx=path.indexOf('/');const host=path.slice(0,idx);const apiPath=path.slice(idx)+(path.includes('?')?'&':'?')+'access_token='+token.access_token;const h={'Content-Type':'application/x-www-form-urlencoded'};const opts={method,headers:h};if(body)opts.body=body instanceof URLSearchParams?body.toString():body;const r=await baiduProxyFetch(host,apiPath,opts);return r.json()};
 
   const uploadFile=async(fileName,base64Data,folder='/apps/family-travel')=>{setSyncing(true);try{
     const raw=base64Data.includes('base64,')?base64Data.split('base64,')[1]:base64Data;
@@ -1149,7 +1178,7 @@ function useBaiduCloud(){
     const blob=new Blob([bytes],{type:'image/jpeg'});
     const path=folder+'/'+fileName;
     const fd=new FormData();fd.append('file',blob,fileName);fd.append('path',path);fd.append('ondup','overwrite');
-    const r=await fetch(`${PROXY_URL}/pan.baidu.com/rest/2.0/xpan/file?method=upload&access_token=${token.access_token}&path=${encodeURIComponent(path)}&ondup=overwrite`,{method:'POST',body:fd});
+    const r=await baiduProxyFetch('pan.baidu.com',`/rest/2.0/xpan/file?method=upload&access_token=${token.access_token}&path=${encodeURIComponent(path)}&ondup=overwrite`,{method:'POST',body:fd});
     const d=await r.json();setSyncing(false);return d;
   }catch(e){setSyncing(false);throw e}};
 
@@ -1159,7 +1188,7 @@ function useBaiduCloud(){
     const blob=new Blob([payload],{type:'application/json'});
     const path='/apps/family-travel/family-travel-data.json';
     const fd=new FormData();fd.append('file',blob,'data.json');fd.append('path',path);fd.append('ondup','overwrite');
-    const r=await fetch(`${PROXY_URL}/pan.baidu.com/rest/2.0/xpan/file?method=upload&access_token=${token.access_token}&path=${encodeURIComponent(path)}&ondup=overwrite`,{method:'POST',body:fd});
+    const r=await baiduProxyFetch('pan.baidu.com',`/rest/2.0/xpan/file?method=upload&access_token=${token.access_token}&path=${encodeURIComponent(path)}&ondup=overwrite`,{method:'POST',body:fd});
     const d=await r.json();setSyncing(false);
     if(d.errno===0)console.log('Cloud sync OK:',new Date().toLocaleTimeString());else console.error('Cloud sync failed:',d);
     return d;
@@ -1168,7 +1197,7 @@ function useBaiduCloud(){
   // Load data from cloud
   const loadData=async()=>{if(!token)return null;try{
     const path='/apps/family-travel/family-travel-data.json';
-    const r=await fetch(`${PROXY_URL}/pan.baidu.com/rest/2.0/xpan/multimedia?method=filemetas&access_token=${token.access_token}&path=${encodeURIComponent(path)}&dlink=1`);
+    const r=await baiduProxyFetch('pan.baidu.com',`/rest/2.0/xpan/multimedia?method=filemetas&access_token=${token.access_token}&path=${encodeURIComponent(path)}&dlink=1`);
     const meta=await r.json();
     if(meta.errno!==0||!meta.list||meta.list.length===0){console.log('No cloud data found, starting fresh');return null}
     const dlink=meta.list[0].dlink;if(!dlink)return null;
