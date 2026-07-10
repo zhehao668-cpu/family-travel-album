@@ -1091,13 +1091,14 @@ function App(){
   const[travelData,setTravelData]=useLocalStorage("familyTravelData_v2",defaultTravelData);
   const[heroData,setHeroData]=useLocalStorage("familyHeroData_v2",{title:"我们的旅行足迹",subtitle:"每一段旅程，都是家的延伸"});
   const[customTags,setCustomTags]=useLocalStorage("familyCustomTags_v2",[]);
+  const[toastMsg,setToastMsg]=useState(null);
   const baidu=useBaiduCloud();
   const[cloudLoaded,setCloudLoaded]=useState(false);
   const[activeId,setActiveId]=useState(null);
 
   // On mount: if connected to Baidu, load cloud data (takes precedence over localStorage)
   useEffect(()=>{if(!baidu.token||cloudLoaded)return;
-    (async()=>{const cloud=await baidu.loadData();if(cloud&&cloud.travelData&&Array.isArray(cloud.travelData)){setTravelData(cloud.travelData);if(cloud.heroData)setHeroData(cloud.heroData);if(cloud.customTags)setCustomTags(cloud.customTags);setToastMsg(`已从百度网盘加载 ${cloud.travelData.length} 条记录 ✓`)};setCloudLoaded(true)})()
+    (async()=>{try{const cloud=await baidu.loadData();if(cloud&&cloud.travelData&&Array.isArray(cloud.travelData)){setTravelData(cloud.travelData);if(cloud.heroData)setHeroData(cloud.heroData);if(cloud.customTags)setCustomTags(cloud.customTags);setToastMsg('已从百度网盘加载 '+cloud.travelData.length+' 条记录 ✓')};setCloudLoaded(true)}catch(e){setCloudLoaded(true);console.error('Cloud load error:',e)}})()
   },[baidu.token]);
 
   // Auto-save to cloud on data changes (debounced 3 seconds)
@@ -1112,7 +1113,6 @@ function App(){
   const[noteDest,setNoteDest]=useState(null);
   const[showHeroEdit,setShowHeroEdit]=useState(false);
   const[viewer,setViewer]=useState(null);
-  const[toastMsg,setToastMsg]=useState(null);
   const[showGalleryMgr,setShowGalleryMgr]=useState(false);
   const[showPickNote,setShowPickNote]=useState(false);
 
