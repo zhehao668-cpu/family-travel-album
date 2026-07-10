@@ -868,7 +868,7 @@ function Footer({onExport,onImport,storageBytes,baidu,onToast}){
             <span className="storage-bar-track"><span className={`storage-bar-fill${level?" "+level:""}`} style={{width:storageInfo.pct+"%"}}></span></span>
             <span className="storage-pct">{storageInfo.pct}%</span>
           </span>
-          <BaiduPanel token={baidu.token} user={baidu.user} login={baidu.login} logout={baidu.logout} uploadFile={baidu.uploadFile} syncing={baidu.syncing} onToast={onToast}/>
+          <BaiduPanel token={baidu.token} user={baidu.user} login={baidu.login} logout={baidu.logout} uploadFile={baidu.uploadFile} syncing={baidu.syncing} onToast={onToast} authError={baidu.authError}/>
           <button onClick={onExport}>⬇ JSON 备份导出</button>
           <label style={{cursor:"pointer",fontSize:"0.73rem",color:"var(--text-muted)",transition:"var(--transition)"}} onMouseEnter={e=>e.target.style.color="var(--gold-light)"} onMouseLeave={e=>e.target.style.color="var(--text-muted)"}>⬆ 导入数据恢复<input type="file" accept=".json" ref={fileRef} onChange={handleImport} style={{display:"none"}}/></label>
         </div>
@@ -997,52 +997,60 @@ function useBaiduCloud(){
   const[token,setToken]=useState(()=>{try{return JSON.parse(sessionStorage.getItem('baidu_token'))}catch{return null}});
   const[user,setUser]=useState(()=>{try{return JSON.parse(sessionStorage.getItem('baidu_user'))}catch{return null}});
   const[syncing,setSyncing]=useState(false);
+  const[authError,setAuthError]=useState(null);
 
   // Process OAuth callback
-  useEffect(()=>{const p=new URLSearchParams(window.location.search);const code=p.get('code');const state=p.get('state');if(!code||!state)return;const saved=sessionStorage.getItem('baidu_state');if(state!==saved)return;const verifier=sessionStorage.getItem('baidu_verifier');if(!verifier)return;
+  useEffect(()=>{
+    const p=new URLSearchParams(window.location.search);
+    const code=p.get('code');const state=p.get('state');
+    const err=p.get('error');const errDesc=p.get('error_description');
+    // Baidu returned an error
+    if(err){setAuthError(errDesc||err);console.error('Baidu OAuth error:',err,errDesc);window.history.replaceState({},'',window.location.pathname);return}
+    if(!code||!state)return;
+    const saved=sessionStorage.getItem('baidu_state');
+    if(state!==saved){setAuthError('state 不匹配，可能被重放攻击');console.error('State mismatch:',state,saved);sessionStorage.removeItem('baidu_state');sessionStorage.removeItem('baidu_verifier');window.history.replaceState({},'',window.location.pathname);return}
+    const verifier=sessionStorage.getItem('baidu_verifier');if(!verifier){setAuthError('缺少 code_verifier');return}
     (async()=>{try{
       const body=new URLSearchParams({grant_type:'authorization_code',code,client_id:BAIDU_APP_KEY,redirect_uri:BAIDU_REDIRECT_URI,code_verifier:verifier});
       const r=await fetch(`${PROXY_URL}/openapi.baidu.com/oauth/2.0/token`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body.toString()});
-      const d=await r.json();if(d.access_token){setToken(d);sessionStorage.setItem('baidu_token',JSON.stringify(d));
+      const d=await r.json();
+      console.log('Baidu token response:',d);
+      if(d.access_token){setToken(d);sessionStorage.setItem('baidu_token',JSON.stringify(d));setAuthError(null);
         const ur=await fetch(`${PROXY_URL}/pan.baidu.com/rest/2.0/xpan/nas?method=uinfo&access_token=${d.access_token}`);
-        const ud=await ur.json();if(ud.errno===0){setUser(ud);sessionStorage.setItem('baidu_user',JSON.stringify(ud))}
-      }
+        const ud=await ur.json();console.log('Baidu user info:',ud);if(ud.errno===0){setUser(ud);sessionStorage.setItem('baidu_user',JSON.stringify(ud))}
+      }else{setAuthError(d.error_description||d.error||'换取token失败')}
       sessionStorage.removeItem('baidu_state');sessionStorage.removeItem('baidu_verifier');
       window.history.replaceState({},'',window.location.pathname);
-    }catch(e){console.error('Baidu auth error:',e)}})()
+    }catch(e){console.error('Baidu auth error:',e);setAuthError('网络错误：'+e.message)}})()
   },[]);
 
-  const login=async()=>{const verifier=generateVerifier();const challenge=await generateChallenge(verifier);const state=base64URL(crypto.getRandomValues(new Uint8Array(16)));sessionStorage.setItem('baidu_verifier',verifier);sessionStorage.setItem('baidu_state',state);const authUrl=`https://openapi.baidu.com/oauth/2.0/authorize?response_type=code&client_id=${BAIDU_APP_KEY}&redirect_uri=${encodeURIComponent(BAIDU_REDIRECT_URI)}&scope=${BAIDU_SCOPE}&code_challenge=${challenge}&code_challenge_method=S256&state=${state}&display=popup`;window.location.href=authUrl};
+  const login=async()=>{setAuthError(null);const verifier=generateVerifier();const challenge=await generateChallenge(verifier);const state=base64URL(crypto.getRandomValues(new Uint8Array(16)));sessionStorage.setItem('baidu_verifier',verifier);sessionStorage.setItem('baidu_state',state);const authUrl=`https://openapi.baidu.com/oauth/2.0/authorize?response_type=code&client_id=${BAIDU_APP_KEY}&redirect_uri=${encodeURIComponent(BAIDU_REDIRECT_URI)}&scope=${BAIDU_SCOPE}&code_challenge=${challenge}&code_challenge_method=S256&state=${state}&display=page`;window.location.href=authUrl};
 
-  const logout=()=>{setToken(null);setUser(null);sessionStorage.removeItem('baidu_token');sessionStorage.removeItem('baidu_user')};
+  const logout=()=>{setToken(null);setUser(null);sessionStorage.removeItem('baidu_token');sessionStorage.removeItem('baidu_user');setAuthError(null)};
 
   const apiCall=async(path,method,body)=>{const h={'Content-Type':'application/x-www-form-urlencoded'};const url=`${PROXY_URL}/${path}${path.includes('?')?'&':'?'}access_token=${token.access_token}`;const opts={method,headers:h};if(body)opts.body=body instanceof URLSearchParams?body.toString():body;const r=await fetch(url,opts);return r.json()};
 
   const uploadFile=async(fileName,base64Data,folder='/apps/family-travel')=>{setSyncing(true);try{
-    // Remove data URL prefix
     const raw=base64Data.includes('base64,')?base64Data.split('base64,')[1]:base64Data;
     const byteChars=atob(raw);const bytes=new Uint8Array(byteChars.length);for(let i=0;i<byteChars.length;i++)bytes[i]=byteChars.charCodeAt(i);
     const blob=new Blob([bytes],{type:'image/jpeg'});
-    // Use the precreate + upload flow
     const path=folder+'/'+fileName;
-    // Simpler approach: use the basic upload endpoint for small files
     const fd=new FormData();fd.append('file',blob,fileName);fd.append('path',path);fd.append('ondup','overwrite');
-    // Need to use the xpan upload endpoint
     const r=await fetch(`${PROXY_URL}/pan.baidu.com/rest/2.0/xpan/file?method=upload&access_token=${token.access_token}&path=${encodeURIComponent(path)}&ondup=overwrite`,{method:'POST',body:fd});
     const d=await r.json();setSyncing(false);return d;
   }catch(e){setSyncing(false);throw e}};
 
-  return{token,user,login,logout,apiCall,uploadFile,syncing};
+  return{token,user,login,logout,apiCall,uploadFile,syncing,authError};
 }
 
-function BaiduPanel({token,user,login,logout,uploadFile,syncing,onToast}){
+function BaiduPanel({token,user,login,logout,uploadFile,syncing,onToast,authError}){
   const[showMenu,setShowMenu]=useState(false);
   const connected=!!token;
   return(
     <div className="baidu-panel" style={{position:'relative'}}>
-      <button className={`baidu-btn${connected?' connected':''}`} onClick={()=>connected?setShowMenu(s=>!s):login()} title={connected?'百度网盘已连接':'连接百度网盘'}>
-        <span className={`baidu-status${connected?' on':''}`}></span>
-        {connected?`☁️ ${user?.baidu_name||'已连接'}`:'☁️ 连接网盘'}
+      <button className={`baidu-btn${connected?' connected':''}`} onClick={()=>connected?setShowMenu(s=>!s):login()} title={connected?'百度网盘已连接':authError?`错误: ${authError}`:'连接百度网盘'}>
+        <span className={`baidu-status${connected?' on':''}`} style={authError?{background:'#d4756b'}:{}}></span>
+        {connected?`☁️ ${user?.baidu_name||'已连接'}`:authError?`☁️ 连接失败 (点击重试)`:'☁️ 连接网盘'}
       </button>
       {connected&&(
         <div className={`cloud-actions${showMenu?' show':''}`}>
